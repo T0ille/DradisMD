@@ -163,4 +163,3 @@ At the moment nested nodes are not supported (because I never used them).
 ### Attachments not imported from Dradis
 
 The Dradis API doesn't allow to download attachments. 
-From communication with Security Roots, they are aware and (re)introducing this feature is included in their roadmap.
