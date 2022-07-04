@@ -1,4 +1,4 @@
-git+ssh://git@github.com:NorthwaveSecurity/dradis-api.git
+git+https://github.com/NorthwaveSecurity/dradis-api
 requests
 rich
 pypandoc

@@ -117,6 +117,8 @@ try:
                 VERIFY_SSL = False
                 import urllib3
                 urllib3.disable_warnings()
+            elif VERIFY_SSL== "":
+                 VERIFY_SSL=True
             elif not Path(VERIFY_SSL).is_file():
                 log.warning(f"The SSL certificate {VERIFY_SSL} was not found, enabling default SSL behavior")
                 VERIFY_SSL=True
