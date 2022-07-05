@@ -449,7 +449,7 @@ class DradisMD():
         # Check if evidences to be updated
         evidence_path=Path(f"{node_folder}/Evidences")
         if not evidence_path.is_dir():
-            log.info(f"No Evidences folder in {node_folder.name}")  
+            log.info(f"No Evidences folder in Node {node_folder.name}")  
         else:
             log.debug("Exporting evidences")
             
@@ -531,14 +531,14 @@ class DradisMD():
                     for file in content_blocks_files:
                         self.export_content_block(project_id,file)
                 else:
-                    log.warning(f"No Content Blocks folder found. Skipping")
+                    log.warning(f"No Content Blocks folder found.")
                 
                 document_properties_path=Path(f"{path}/document_properties.ini")
                 if document_properties_path.is_file():
                     log.debug(f"Exporting Document Properties")
                     self.export_document_properties(project_id,document_properties_path)
                 else:
-                    log.warning(f"No document properties found. Skipping")
+                    log.warning(f"No document properties found.")
                 
                 issues_path=Path(f"{path}/Issues")
                 if issues_path.is_dir():
@@ -547,7 +547,7 @@ class DradisMD():
                     for file in local_issues:
                         self.export_issue(project_id, file)
                 else:
-                    log.warning(f"No Issues folder found. Skipping")
+                    log.warning(f"No Issues folder found.")
 
                 nodes_path=Path(f"{path}/Nodes")
                 if nodes_path.is_dir():
@@ -557,7 +557,7 @@ class DradisMD():
                         self.export_node(project_id,folder)
                     
                 else:
-                    log.warning(f"No Nodes folder found. Skipping") 
+                    log.warning(f"No Nodes folder found.") 
                     
                 console.print(f"{project.get('name',None)} was fully updated. ✔")  
             else:
@@ -660,7 +660,10 @@ def get_pandoc():
         from pypandoc.pandoc_download import download_pandoc
         # see the documentation how to customize the installation path
         # but be aware that you then need to include it in the `PATH`
-        download_pandoc()
+        try:
+            download_pandoc()
+        except:
+            log.error("Pandoc install could not be fully completed. Check if it correctly installed with 'pandoc -v'")
     else: 
         console.print("If you want to convert files, you can install pandoc manually with:\n🐧: sudo apt-get install pandoc\n🍫: choco install pandoc\n🍺: brew install pandoc pandoc-citeproc Caskroom/cask/mactex\n More info: https://pandoc.org/installing.html")  
 
@@ -700,7 +703,7 @@ def convert(content, input_format,output_format) -> str:
             except:
                 log.error(f"Content could not be converted. Is this a valid file markup file (md/textile)?")
         else:
-            log.warning(f"No conversion needed for this file. Skipping")    
+            log.debug(f"No converting needed for this file. Skipping")    
                 
 def convert_file(file_path, input_format, output_format, delete_input_file=True):
     
@@ -713,7 +716,7 @@ def convert_file(file_path, input_format, output_format, delete_input_file=True)
     new_content = convert(content, input_format, output_format)
     new_file.write_text(new_content, encoding="utf8",newline=LINE_RETURN,errors="ignore") 
     
-    if delete_input_file: # delete file after conversion
+    if delete_input_file: # delete file after converting
         file_path.unlink()
         
 def replace_unecessary_escape(text: str):
@@ -751,7 +754,7 @@ def get_textile_content(file: Path) -> str:
             except Exception as e:
                 log.error(f"Error with get_textile_content from {file} :{e}")
         else: 
-            log.warning(f"{file.name} not a valid format, skipping")
+            log.warning(f"{file.name} was not a valid markup format, skipping Dradis export")
             
     else:
         textile_content = file.read_text(encoding="utf8",errors="ignore")
@@ -836,7 +839,7 @@ def test_connection(url):
 
 def rename_attachments_from_file(file_path, renaming_format):
     """ Parse and rename attachments with the renaming format"""
-    log.info(f"Renaming attachments")
+    log.info(f"Renaming attachments in {file_path}")
     if not renaming_format:
         log.error("No renaming format provided. Please check config.ini")
     else:
@@ -850,7 +853,7 @@ def rename_attachments_from_file(file_path, renaming_format):
                 attachments_path=Path(attachment.get("path"))
                 full_attachments_path = Path.joinpath(work_file.parent,attachments_path)
                 if not full_attachments_path.is_file():
-                    log.warning(f"{full_attachments_path} was not found. File missing? Skipping")
+                    log.warning(f"{full_attachments_path} was not found. Is attachment missing?")
                 else:
                     title = get_title(content)
                     if not title:
