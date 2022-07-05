@@ -1,26 +1,32 @@
 # DradisMD
-
 ```
 Still in development 🚧
 ```
 
-DradisMD allows to import, manage Dradis projects locally and convert Dradis textile format to [GitHub Flavored Markdown](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)  and more other format supported by pandoc.
-
-Note: [Dradis Pro](https://dradisframework.com/) is a Reporting and collaboration tool for InfoSec team.  
-
+DradisMD allows to import, manage [Dradis](https://dradisframework.com/) projects locally and convert Dradis textile format to [GitHub Flavored Markdown](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)  and more other format supported by pandoc.
 
 Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based on the following libraries/project
 
-* [dradis API](https://github.com/NorthwaveSecurity/dradis-api) Python wrapper for the [Dradis API](https://dradisframework.com/support/guides/rest_api/)
-* [pypandoc](https://github.com/NicklasTegner/pypandoc) for markup file converting 
+* [dradis-api](https://github.com/NorthwaveSecurity/dradis-api) Python wrapper for the [Dradis API](https://dradisframework.com/support/guides/rest_api/)
+* [pypandoc](https://github.com/NicklasTegner/pypandoc) wrapper for pandoc: markup file converting 
 * [rich](https://github.com/Textualize/rich) for prettier output 🌈
 
-## Why this project?
 
-Being able to import project files locally allows more control on them. 
-For instance, use your prefered editor to make the writing of your report even easier.  
-This is just an alternative to the Web editor that Dradis Pro provides.  
-
+- [DradisMD](#dradismd)
+  - [Requirments](#requirments)
+  - [Installation](#installation)
+  - [Getting Started](#getting-started)
+  - [Usage](#usage)
+    - [--help](#--help)
+    - [list:](#list)
+    - [get](#get)
+    - [update](#update)
+    - [convert](#convert)
+    - [rename](#rename)
+  - [Markdown editor suggestion](#markdown-editor-suggestion)
+  - [Missing features and known bugs](#missing-features-and-known-bugs)
+    - [Nested nodes not supported](#nested-nodes-not-supported)
+    - [Attachments not imported from Dradis](#attachments-not-imported-from-dradis)
 
 ## Requirments
 
@@ -54,12 +60,12 @@ python dradismd.py list
 ## Usage
 
 DradisMD supports the followings action:
-  * --help                                           
-  * list 
-  * get
-  * update      
-  * convert
-  * rename
+  * [--help](#help)                                           
+  * [list](#list) 
+  * [get](#get)
+  * [update](#update)      
+  * [convert](#convert)
+  * [rename](#rename)
 
 ### --help
 Show help message
@@ -95,7 +101,7 @@ Export your local project file(s) to Dradis. Supports markdown and textile.
 If no source is provided, local folder is used.  
 A single file can also be used
 ```
-python dradismd.py update <project_id> [source]           
+python dradismd.py update <project_id> [file|folder]           
 ```
 
 **Examples**:  
@@ -136,7 +142,7 @@ python dradismd.py convert <file|folder> <format>
 ### rename
 Using the pattern defined in config.ini: Rename all attachments referenced in a project file and update the references
 ```
-python dradismd.py rename <file|folder>
+python dradismd.py rename <file>
 ```
 
 ## Markdown editor suggestion
@@ -147,14 +153,13 @@ Below some of the markdown editor I would recommend trying
    * [Markdown All in One](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one)  
    * [Markdown Paste](https://marketplace.visualstudio.com/items?itemName=telesoho.vscode-markdown-paste-image)
    * [Markdown Shortcuts](https://marketplace.visualstudio.com/items?itemName=mdickin.markdown-shortcuts)
+   * [Textile Preview](https://marketplace.visualstudio.com/items?itemName=michaelnewton.textile-preview)
 2. [Joplin](https://joplinapp.org/)  
 3. [ObsidianMD](https://obsidian.md/)  
 
 Or literally any text editor such as VIM, Atom, Notepad++, ...
 
-
-
-## Missing feature and known bugs
+## Missing features and known bugs
 
 ### Nested nodes not supported
 
@@ -163,4 +168,3 @@ At the moment nested nodes are not supported (because I never used them).
 ### Attachments not imported from Dradis
 
 The Dradis API doesn't allow to download attachments. 
-From communication with Security Roots, they are aware and (re)introducing this feature is included in their roadmap.
