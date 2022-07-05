@@ -375,29 +375,30 @@ class DradisMD():
         Export content block file to Dradis
         """
         content = get_textile_content(file) # Check if valid file and convert it to textile string
-        # Check if #[Title]#  is present ( = valid file to export)
-        title = get_title(content)
-        if not title:
-            log.warning(f"{file.name} does not have a #[Title]# field, skipping ")
-        # Valid file
-        else:
-            node_id = self.get_node_id_from_file(project_id, file)
-            content = self.handle_attachments(project_id, node_id, content, file.parent) 
-            dradis_content_blocks = self.api.get_all_contentblocks(project_id)
-            
-            title_found = get_item_from_dict_list(dradis_content_blocks,'title', title)
-            
-            # create new block
-            if not title_found: 
-                log.debug(f"Creating content block {title}")
-                result = self.api.create_contentblock(project_id, content, title)
+        if content:
+            # Check if #[Title]#  is present ( = valid file to export)
+            title = get_title(content)
+            if not title:
+                log.warning(f"{file.name} does not have a #[Title]# field, skipping ")
+            # Valid file
+            else:
+                node_id = self.get_node_id_from_file(project_id, file)
+                content = self.handle_attachments(project_id, node_id, content, file.parent) 
+                dradis_content_blocks = self.api.get_all_contentblocks(project_id)
+                
+                title_found = get_item_from_dict_list(dradis_content_blocks,'title', title)
+                
+                # create new block
+                if not title_found: 
+                    log.debug(f"Creating content block {title}")
+                    result = self.api.create_contentblock(project_id, content, title)
 
-            # update existing block     
-            else: 
-                log.debug(f"Replacing content block {title}")
-                block_id = title_found['id']
-                result = self.api.update_contentblock(project_id, block_id, content)
-            log.debug(result)
+                # update existing block     
+                else: 
+                    log.debug(f"Replacing content block {title}")
+                    block_id = title_found['id']
+                    result = self.api.update_contentblock(project_id, block_id, content)
+                log.debug(result)
 
 
     def export_document_properties(self, project_id, path): 
@@ -414,24 +415,25 @@ class DradisMD():
 
     def export_issue(self, project_id, file):
         content = get_textile_content(file)
-        title = get_title(content)
-        if not title:
-            log.warning(f"{file.name} does not have a #[Title]# field, skipping")
+        if content:
+            title = get_title(content)
+            if not title:
+                log.warning(f"{file.name} does not have a #[Title]# field, skipping")
 
-        # Valid file    
-        else:
-            if not self.issue_list:
-                self.issue_list = self.api.get_all_issues(project_id)
-            issue_found = get_item_from_dict_list(self.issue_list, 'title', title)  # check if title exist already in dradis
-            if not issue_found: # create new issue
-                log.debug(f"Creating issue {title}") 
-                result = self.api.create_issue(project_id, content)
-                log.debug(f"result= {result}")
-            else: # update existing issue 
-                log.debug(f"Replacing issue {title}")
-                issue_id = issue_found['id']
-                result = self.api.update_issue(project_id, issue_id, content)
-                log.debug(f"result= {result}")
+            # Valid file    
+            else:
+                if not self.issue_list:
+                    self.issue_list = self.api.get_all_issues(project_id)
+                issue_found = get_item_from_dict_list(self.issue_list, 'title', title)  # check if title exist already in dradis
+                if not issue_found: # create new issue
+                    log.debug(f"Creating issue {title}") 
+                    result = self.api.create_issue(project_id, content)
+                    log.debug(f"result= {result}")
+                else: # update existing issue 
+                    log.debug(f"Replacing issue {title}")
+                    issue_id = issue_found['id']
+                    result = self.api.update_issue(project_id, issue_id, content)
+                    log.debug(f"result= {result}")
 
     def export_node(self, project_id, node_folder):
         if not self.dradis_nodes:
@@ -753,8 +755,10 @@ def get_textile_content(file: Path) -> str:
 
             except Exception as e:
                 log.error(f"Error with get_textile_content from {file} :{e}")
+                return ""
         else: 
             log.warning(f"{file.name} was not a valid markup format, skipping Dradis export")
+            return ""
             
     else:
         textile_content = file.read_text(encoding="utf8",errors="ignore")
