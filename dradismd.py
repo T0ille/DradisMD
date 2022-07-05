@@ -390,12 +390,12 @@ class DradisMD():
                 
                 # create new block
                 if not title_found: 
-                    log.debug(f"Creating content block {title}")
+                    log.info(f"Creating content block {title}")
                     result = self.api.create_contentblock(project_id, content, title)
 
                 # update existing block     
                 else: 
-                    log.debug(f"Replacing content block {title}")
+                    log.info(f"Updating content block {title}")
                     block_id = title_found['id']
                     result = self.api.update_contentblock(project_id, block_id, content)
                 log.debug(result)
@@ -411,7 +411,7 @@ class DradisMD():
                 log.debug(result) # debug logs   
             except:
                 log.error(f"Property {key} failed to update")
-      
+        log.info("Document Properties exported")
 
     def export_issue(self, project_id, file):
         content = get_textile_content(file)
@@ -426,11 +426,11 @@ class DradisMD():
                     self.issue_list = self.api.get_all_issues(project_id)
                 issue_found = get_item_from_dict_list(self.issue_list, 'title', title)  # check if title exist already in dradis
                 if not issue_found: # create new issue
-                    log.debug(f"Creating issue {title}") 
+                    log.info(f"Creating issue {title}") 
                     result = self.api.create_issue(project_id, content)
                     log.debug(f"result= {result}")
                 else: # update existing issue 
-                    log.debug(f"Replacing issue {title}")
+                    log.info(f"Updating issue {title}")
                     issue_id = issue_found['id']
                     result = self.api.update_issue(project_id, issue_id, content)
                     log.debug(f"result= {result}")
@@ -441,7 +441,7 @@ class DradisMD():
         
         node_found = get_item_from_dict_list(self.dradis_nodes,'label',node_folder.name)
         if not node_found: # create new node
-            log.debug(f"Creating node {node_folder.name}")
+            log.info(f"Creating node {node_folder.name}")
             result = self.api.create_node(project_id,node_folder.name,1)
             node_id = result['id']
         else: # node already exists 
