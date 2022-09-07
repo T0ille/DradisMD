@@ -161,6 +161,12 @@ Or literally any text editor such as VIM, Atom, Notepad++, ...
 
 ## Missing features and known bugs
 
+TODO:
+
+- [ ] Include interaction with [Issue Library](https://dradisframework.com/support/guides/rest_api/issuelibrary.html) to add new issue to project.
+- [ ] Include more pandoc formats support (PDF, word, ...)
+- [ ] Fix bugs with the auto renaming feature
+
 ### Nested nodes not supported
 
 At the moment nested nodes are not supported (because I never used them).
