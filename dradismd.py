@@ -752,11 +752,19 @@ class DradisMD:
             # Create evidence
             if node_name:
                 evidence_content = EVIDENCE_TEMPLATE.read_text(encoding="utf8", errors="ignore")
-                evidence_folder_path = Path(f"{project_path}/Nodes/{node_name}/Evidences")
+                evidence_folder_path = Path(f"{project_path}/Nodes/{node_name}/Evidences/{issue_title}")
                 evidence_folder_path.mkdir(exist_ok=True, parents=True)
-                Path(f"{evidence_folder_path}/{issue_title}{extension}").write_text(
-                    evidence_content, encoding="utf8", newline=LINE_RETURN, errors="ignore"
-                )
+                evidence_file = Path(f"{evidence_folder_path}/Evidence{extension}")
+                while evidence_file.is_file():
+                    log.debug("Evidence file already existed, creating new one")
+                    last_char = evidence_file.stem[-1:]
+                    if last_char.isdigit():
+                        evidence_file = Path(f"{evidence_folder_path}/{evidence_file.stem[:-1]}{int(last_char)+1}{extension}")
+                        log.debug(f"Evidence {evidence_file}")
+                    else:
+                        evidence_file = Path(f"{evidence_folder_path}/Evidence2{extension}")
+                        log.debug(f"Evidence {evidence_file}")
+                evidence_file.write_text(evidence_content, encoding="utf8", newline=LINE_RETURN, errors="ignore")
 
     #####################################################
     #                                                   #
