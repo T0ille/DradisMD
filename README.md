@@ -1,5 +1,7 @@
 # DradisMD
 
+Current version:    **0.2.0**
+  
 DradisMD allows to import, manage [Dradis](https://dradisframework.com/) projects locally and convert Dradis textile format to [GitHub Flavored Markdown](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)  and more other format supported by pandoc.
 
 Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based on the following libraries/project
@@ -29,7 +31,7 @@ Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based 
     - [Attachments not imported from Dradis](#attachments-not-imported-from-dradis)
   - [TODO:](#todo)
 
-## Requirments
+## Requirements
 
 * **Python >= 3.10**  
 
