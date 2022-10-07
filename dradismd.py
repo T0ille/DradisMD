@@ -759,7 +759,9 @@ class DradisMD:
                     log.debug("Evidence file already existed, creating new one")
                     last_char = evidence_file.stem[-1:]
                     if last_char.isdigit():
-                        evidence_file = Path(f"{evidence_folder_path}/{evidence_file.stem[:-1]}{int(last_char)+1}{extension}")
+                        evidence_file = Path(
+                            f"{evidence_folder_path}/{evidence_file.stem[:-1]}{int(last_char)+1}{extension}"
+                        )
                         log.debug(f"Evidence {evidence_file}")
                     else:
                         evidence_file = Path(f"{evidence_folder_path}/Evidence2{extension}")
@@ -1197,7 +1199,6 @@ def arg_parser():
     # Parse script argument
     try:
         args = parser.parse_args()
-        console.print(args)
     # Invalid argument
     except:
         log.error("Not a valid action or requires more arguments")
