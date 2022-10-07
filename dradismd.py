@@ -732,13 +732,11 @@ class DradisMD:
                 if not ISSUE_TEMPLATE.is_file():
                     log.error("The template file to create an empty issue was not found. Please check config.ini")
                 else:
-                    log.info(f"Creating local issue: {issue_title}")
                     issue_content = ISSUE_TEMPLATE.read_text(encoding="utf8", errors="ignore")
                     issue_content = issue_content.replace("#[Title]#", f"#[Title]#\n{issue_title}")
 
             # If import from library
             else:
-                log.info(f"Creating local issue {issue_id}")
                 issue = self.api.get_standard_issue(issue_id)
                 issue_content = issue["content"]
                 issue_title = clean_filename(issue["title"])
@@ -747,6 +745,7 @@ class DradisMD:
             issue_folder_path = Path(f"{project_path}/Issues")
             issue_folder_path.mkdir(exist_ok=True, parents=True)
             extension = SUPPORTED_FORMAT[DEFAULT_FORMAT]
+            log.info(f"Creating local issue: {issue_folder_path}/{issue_title}{extension}")
             Path(f"{issue_folder_path}/{issue_title}{extension}").write_text(
                 issue_content, encoding="utf8", newline=LINE_RETURN, errors="ignore"
             )
@@ -767,6 +766,7 @@ class DradisMD:
                     else:
                         evidence_file = Path(f"{evidence_folder_path}/Evidence2{extension}")
                         log.debug(f"Evidence {evidence_file}")
+                log.info(f"Creating local issue: {evidence_file}")
                 evidence_file.write_text(evidence_content, encoding="utf8", newline=LINE_RETURN, errors="ignore")
 
     #####################################################
