@@ -1,5 +1,7 @@
 # DradisMD
 
+Current version:    **0.2.0**
+  
 DradisMD allows to import, manage [Dradis](https://dradisframework.com/) projects locally and convert Dradis textile format to [GitHub Flavored Markdown](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)  and more other format supported by pandoc.
 
 Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based on the following libraries/project
@@ -8,7 +10,7 @@ Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based 
 * [pypandoc](https://github.com/NicklasTegner/pypandoc) wrapper for pandoc: markup file converting 
 * [rich](https://github.com/Textualize/rich) for prettier output 🌈
 
-
+**Table of contents**
 - [DradisMD](#dradismd)
   - [Requirments](#requirments)
   - [Installation](#installation)
@@ -27,9 +29,9 @@ Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based 
   - [Missing features and known bugs](#missing-features-and-known-bugs)
     - [Nested nodes not supported](#nested-nodes-not-supported)
     - [Attachments not imported from Dradis](#attachments-not-imported-from-dradis)
-  - [TODO:](#todo)
+    - [TODO:](#todo)
 
-## Requirments
+## Requirements
 
 * **Python >= 3.10**  
 
@@ -62,11 +64,14 @@ python dradismd.py list
 
 DradisMD supports the followings action:
   * [--help](#help)                                           
-  * [list](#list) 
+  * [projects](#projects) 
   * [get](#get)
   * [update](#update)      
+  * [issues](#issues)
+  * [add_issue](#add_issue)
   * [convert](#convert)
   * [rename](#rename)
+
 
 ### --help
 Show help message
