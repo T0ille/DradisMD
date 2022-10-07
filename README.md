@@ -1,7 +1,4 @@
 # DradisMD
-```
-Still in development 🚧
-```
 
 DradisMD allows to import, manage [Dradis](https://dradisframework.com/) projects locally and convert Dradis textile format to [GitHub Flavored Markdown](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)  and more other format supported by pandoc.
 
@@ -18,15 +15,19 @@ Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based 
   - [Getting Started](#getting-started)
   - [Usage](#usage)
     - [--help](#--help)
-    - [list:](#list)
+    - [projects:](#projects)
     - [get](#get)
     - [update](#update)
+    - [issues](#issues)
+    - [add_issue](#add_issue)
     - [convert](#convert)
     - [rename](#rename)
+  - [Changelog](#changelog)
   - [Markdown editor suggestion](#markdown-editor-suggestion)
   - [Missing features and known bugs](#missing-features-and-known-bugs)
     - [Nested nodes not supported](#nested-nodes-not-supported)
     - [Attachments not imported from Dradis](#attachments-not-imported-from-dradis)
+  - [TODO:](#todo)
 
 ## Requirments
 
@@ -52,7 +53,7 @@ instance_url=hxxps://your-dradis-instance-url.com
 api_token=your_api_token_here
 ```
 
-3. List projects 
+3. List projects
 ```
 python dradismd.py list
 ```
@@ -73,7 +74,7 @@ Show help message
 python dradismd.py --help 
 ```
 
-### list:  
+### projects:  
 List projects with their IDs in last updated order.  
 --head option to show only last X projects
 ```
@@ -132,6 +133,25 @@ Note: The script expects the following folder structure (which is generated when
 ```
 The tool will not work properly if your local project has a different folder structure.
 
+### issues
+
+List issues from issue library.  
+Search the issue library  for one of the keywords provided
+
+```
+python dradismd.py issues [keywords]
+```
+
+### add_issue
+
+Add an issue to project folder from template or from issue library if --id is used
+Create a new evidence too if --node  is provided
+
+```
+python dradismd.py add_issue <project_path> --id <id> or --title <title>
+```
+
+
 
 ### convert
 Convert a project file or all files in a folder to another format. Supported: markdown, textile
@@ -144,6 +164,12 @@ Using the pattern defined in config.ini: Rename all attachments referenced in a 
 ```
 python dradismd.py rename <file>
 ```
+
+## Changelog
+
+**07/10/2022 - v0.2.0**
+- Added add_issue and issues action
+- Fixed rename
 
 ## Markdown editor suggestion
 
@@ -161,11 +187,6 @@ Or literally any text editor such as VIM, Atom, Notepad++, ...
 
 ## Missing features and known bugs
 
-TODO:
-
-- [ ] Include interaction with [Issue Library](https://dradisframework.com/support/guides/rest_api/issuelibrary.html) to add new issue to project.
-- [ ] Include more pandoc formats support (PDF, word, ...)
-- [ ] Fix bugs with the auto renaming feature
 
 ### Nested nodes not supported
 
@@ -174,3 +195,10 @@ At the moment nested nodes are not supported (because I never used them).
 ### Attachments not imported from Dradis
 
 The Dradis API doesn't allow to download attachments. 
+
+## TODO:
+
+- [X] Include interaction with [Issue Library](https://dradisframework.com/support/guides/rest_api/issuelibrary.html) to add new issue to project.
+- [X] Fix bugs with the auto renaming feature
+- [ ] Include more pandoc formats support (PDF, word, ...)
+- [ ] VScode workspace with relevant markdown/textile extensions

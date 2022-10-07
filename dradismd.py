@@ -1094,7 +1094,7 @@ def print_help():
     help_table.add_column("Description")
     help_table.add_row("--help", "", "Show this help message")
     help_table.add_row(
-        "list\n    [dim][--head][/dim]",
+        "projects\n    [dim][--head][/dim]",
         "\n[dim]<number>[/dim]",
         "List projects with their IDs in last updated order\n[dim]Show only last X projects[/dim]",
     )
@@ -1128,7 +1128,7 @@ def print_help():
 
     console.print(help_table)
     console.print(
-        "[highlight]Example of use:[/highlight]\npython dradismd.py [args]list[/args]\npython dradismd.py [args]get 47 /workfolder/pentests [dim]--format markdown[/dim][/args]",
+        "[highlight]Example of use:[/highlight]\npython dradismd.py [args]projects[/args]\npython dradismd.py [args]get 47 /workfolder/pentests [dim]--format markdown[/dim][/args]",
         style=None,
     )
 
