@@ -62,11 +62,14 @@ python dradismd.py list
 
 DradisMD supports the followings action:
   * [--help](#help)                                           
-  * [list](#list) 
+  * [projects](#projects) 
   * [get](#get)
   * [update](#update)      
+  * [issues](#issues)
+  * [add_issue](#add_issue)
   * [convert](#convert)
   * [rename](#rename)
+
 
 ### --help
 Show help message
