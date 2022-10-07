@@ -10,7 +10,7 @@ Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based 
 * [pypandoc](https://github.com/NicklasTegner/pypandoc) wrapper for pandoc: markup file converting 
 * [rich](https://github.com/Textualize/rich) for prettier output 🌈
 
-
+**Table of contents**
 - [DradisMD](#dradismd)
   - [Requirments](#requirments)
   - [Installation](#installation)
