@@ -734,6 +734,7 @@ class DradisMD:
                 else:
                     log.info(f"Creating local issue: {issue_title}")
                     issue_content = ISSUE_TEMPLATE.read_text(encoding="utf8", errors="ignore")
+                    issue_content = issue_content.replace("#[Title]#", f"#[Title]#\n{issue_title}")
 
             # If import from library
             else:
