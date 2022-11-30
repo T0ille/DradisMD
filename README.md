@@ -207,3 +207,4 @@ The Dradis API doesn't allow to download attachments.
 - [X] Fix bugs with the auto renaming feature
 - [ ] Include more pandoc formats support (PDF, word, ...)
 - [ ] VScode workspace with relevant markdown/textile extensions
+- [ ] Add a check to verify the local file has a more recent 'last modified date' when updating project 
