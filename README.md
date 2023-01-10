@@ -45,6 +45,8 @@ To use the convertion features, [Pandoc](https://pandoc.org/) needs to be availa
 pip -r requirements.txt
 ```
 
+[Optional] Zsh completion can also be setup see the [shell completion folder](./shell-completion). 
+
 ## Getting Started
 
 1. Find your **[API token](https://dradisframework.com/support/guides/rest_api/index.html#authentication)**

@@ -1,0 +1,101 @@
+#compdef _dradismd dradismd
+#############################################################
+#
+# Copy this file in one of the path of $fpath used by zsh.
+#
+# Install on the default ZSH completion path (Debian)
+# cp _dradismd /usr/share/zsh/vendor-completions/_dradismd
+#
+#############################################################
+
+
+# Add ZSH completion for dradismd
+function _dradismd {
+    local line
+
+    # Setup dradismd args
+    _arguments -C \
+        "-h[Show help information]" \
+        "--help[Show help information]" \
+	"1: :((projects:'List projects with their IDs in last updated order' get:'Import a project from Dradis to local folder' issues:'List/Search issues from issue library' add_issue:'Add an issue to project folder' update:'Export your local projects files to Dradis' convert:'Convert a project file or a folder to another format' rename:'Rename all attachments in a file with correct Dradis path'))" \
+        "*::arg:->args"
+
+    # Setup dradismd subcommand
+    case $line[1] in
+        projects)
+            _dradismd_projects
+        ;;
+        get)
+            _dradismd_get
+        ;;
+        issues)
+            _dradismd_issues
+        ;;
+        add_issue)
+            _dradismd_add_issue
+        ;;
+        update)
+            _dradismd_update
+        ;;
+        convert)
+            _dradismd_convert
+        ;;
+        rename)
+            _dradismd_rename
+        ;;
+    esac
+}
+
+#########################
+# dradismd subcommand
+#########################
+
+function _dradismd_projects {
+    _arguments \
+        "--head=[Show only last X projects]:Show only last X projects:"
+}
+
+function _dradismd_get {
+    # Getting list of id formated with Name of project as description 
+    # Example : "001\:'project1' 002\:project2 003\:'project3'"
+    dradisId=$(dradismd project|tail -n +5|head -n -1|awk '{print $2 "\\\\:\\\x27" $4 "\\\x27"}'|xargs)
+    _arguments \
+	    "1:project_id:(($dradisId))"\
+	    "2:destination_folder:_path_files"\
+	    "--format=:Format to convert to when importing:(markdown pdf word textile)"
+}
+
+function _dradismd_issues {
+    _arguments \
+        ":List issues from issue library:"
+}
+
+function _dradismd_add_issue {
+    _arguments \
+	"1:destination_folder:_path_files"\
+	"--id=:id of the issue from library:"\
+	"--title=:title of the issue:"\
+	"--node=:Create new evidence in this node:"
+}
+
+function _dradismd_update {
+    # Getting list of id formated with Name of project as description 
+    # Example : "001\:'project1' 002\:project2 003\:'project3'"
+    dradisId=$(dradismd project|tail -n +5|head -n -1|awk '{print $2 "\\\\:\\\x27" $4 "\\\x27"}'|xargs)
+    _arguments \
+	"1:project_id:(($dradisId))"\
+	"2:Source folder:_path_files"
+}
+
+function _dradismd_convert {
+    _arguments \
+	"1:Source folder:_path_files"\
+	"2:Format to convert:(markdown pdf word textile)"
+}
+
+function _dradismd_rename {
+    _arguments \
+	"1:Input file:_path_files"\
+	"2:Attachements folder file:_path_files"
+}
+
