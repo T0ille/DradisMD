@@ -41,7 +41,7 @@ install()
 #                                                   #
 #####################################################
 
-DRADISMD_VERSION = "0.2.0"
+DRADISMD_VERSION = "0.2.1"
 
 SCRIPT_PATH = Path(__file__).parent  # location of dradismd.py
 CONFIG_FILE = Path(f"{SCRIPT_PATH}/config.ini")  # location of config file
@@ -149,14 +149,14 @@ NO_RESULT = "ActiveRecord::RecordNotFound"
 
 
 class DradisMD:
-    def __init__(self, api_token, url, ssl):
+    def __init__(self, api_token: str, url: str, ssl: str):
         self.api = Dradis(api_token, url, ssl)
         self.projects = {}
         self.issue_list = {}
         self.dradis_nodes = {}
         self.issue_library = {}
 
-    def list_projects(self, head: int):
+    def list_projects(self, head: int) -> None:
         """List all Dradis project
         param head: Show only Top n project (optional)
         """
@@ -229,7 +229,7 @@ class DradisMD:
     #                  Import functions                 #
     #                                                   #
     #####################################################
-    def import_content_blocks(self, project_path: Path, project_id: id, format):
+    def import_content_blocks(self, project_path: Path, project_id: id, format: str) -> None:
         """Import all content blocks
         param project_path: Folder where to create local files
         param project_id: Dradis Project id
@@ -251,19 +251,19 @@ class DradisMD:
 
             log.info(f"Bloc [{Path(filename).stem}] was created")
 
-    def import_document_properties(self, project_path: Path, project_id: int):
+    def import_document_properties(self, project_path: Path, project_id: int) -> None:
         log.debug(f"Import Document Properties\n")
         document_properties = self.api.get_all_docprops(project_id)
         log.debug(document_properties)
-        file = Path(f"{project_path}/document_properties.ini")
+        properties_file = Path(f"{project_path}/document_properties.ini")
         file_content = "[DOCUMENT_PROPERTIES]\n"
         for document_property in document_properties:
             for key, value in document_property.items():
                 file_content = f"{file_content}{key}={value}\n"
-        file.write_text(file_content, encoding="utf8", errors="ignore", newline=LINE_RETURN)
+        properties_file.write_text(file_content, encoding="utf8", errors="ignore", newline=LINE_RETURN)
         log.info(f"document_properties.ini was created")
 
-    def import_issues(self, path: Path, project_id: int, format: str):
+    def import_issues(self, path: Path, project_id: int, format: str) -> None:
         log.debug(f"\n")
 
         path = Path(f"{path}/Issues")
@@ -279,14 +279,14 @@ class DradisMD:
 
             log.debug(f"Creating file for {title} Sections Length: {len(issue_content)}")
 
-            file = Path(f"{path}/{filename}")
-            file.write_text(issue_content, encoding="utf8", errors="ignore", newline=LINE_RETURN)
+            issue_file = Path(f"{path}/{filename}")
+            issue_file.write_text(issue_content, encoding="utf8", errors="ignore", newline=LINE_RETURN)
 
             if format != DRADIS_FORMAT:
-                convert_file(file, "textile", format, True)
+                convert_file(issue_file, "textile", format, True)
             log.info(f"Issue [{Path(filename).stem}] was created")
 
-    def import_nodes(self, path: Path, project_id: int, format: str):
+    def import_nodes(self, path: Path, project_id: int, format: str) -> None:
         log.debug(f"Import Nodes")
         if not self.dradis_nodes:
             self.dradis_nodes = self.api.get_all_nodes(project_id)
@@ -303,20 +303,20 @@ class DradisMD:
                 evidence_content = evidence["content"]
                 log.debug(f"Creating evidence file for {issue_name} Sections Length: {len(evidence_content)}")
                 filename = f"Evidence-{index+1}-{clean_filename(issue_name)}.textile"
-                file = Path(f"{evidences_path}/{filename}")
+                evidence_file = Path(f"{evidences_path}/{filename}")
                 log.debug(evidence_content)
-                file.write_text(
+                evidence_file.write_text(
                     evidence_content,
                     encoding="utf8",
                     errors="ignore",
                     newline=LINE_RETURN,
                 )
                 if format != DRADIS_FORMAT:
-                    convert_file(file, DRADIS_FORMAT, format, True)
+                    convert_file(evidence_file, DRADIS_FORMAT, format, True)
                 log.info(f"Evidence [{Path(filename).stem}] was created")
 
     # def import_attachments(self,path,project_id): # Download attachments not implemented in Dradis API :/
-    def import_project(self, project_id: int, destination: str, format: str):
+    def import_project(self, project_id: int, destination: str, format: str) -> None:
         project = self.api.get_project(project_id)
         if project.get("message") == NO_RESULT:
             log.error(f"Project {project_id} doesn't exist or you don't have access.")
@@ -352,7 +352,7 @@ class DradisMD:
     #                                                   #
     #####################################################
 
-    def handle_attachments(self, project_id, node_id, content, file_path) -> str:
+    def handle_attachments(self, project_id: str, node_id: str, content: str, file_path: Path) -> str:
         """Upload attachments from textile content to Dradis and return the content with the updated Dradis file path"""
 
         existing_nodes_attachments = self.api.get_all_attachments(project_id, node_id)
@@ -406,7 +406,7 @@ class DradisMD:
                 self.api.create_attachment(project_id, node_id, *files)
         return content
 
-    def export_content_block(self, project_id, file):
+    def export_content_block(self, project_id: str, file: Path) -> None:
         """
         Export content block file to Dradis
         """
@@ -437,7 +437,7 @@ class DradisMD:
                     result = self.api.update_contentblock(project_id, block_id, content)
                 log.debug(result)
 
-    def export_document_properties(self, project_id, path):
+    def export_document_properties(self, project_id: str, path: Path) -> None:
         properties_file = configparser.ConfigParser()
         properties_file.read(path)
         properties = dict(properties_file["DOCUMENT_PROPERTIES"])
@@ -449,7 +449,7 @@ class DradisMD:
                 log.error(f"Property {key} failed to update")
         log.info("Document Properties exported")
 
-    def export_issue(self, project_id, file):
+    def export_issue(self, project_id: str, file: Path) -> None:
         content = get_textile_content(file)
         if content:
             title = get_title(content)
@@ -473,7 +473,7 @@ class DradisMD:
                     result = self.api.update_issue(project_id, issue_id, content)
                     log.debug(f"result= {result}")
 
-    def export_node(self, project_id, node_folder):
+    def export_node(self, project_id: str, node_folder: Path) -> None:
         if not self.dradis_nodes:
             self.dradis_nodes = self.api.get_all_nodes(project_id)
 
@@ -501,7 +501,7 @@ class DradisMD:
                 for file in evidence_list_for_issue:
                     self.export_evidence(project_id, node_id, issue_folder.name, file)
 
-    def export_evidence(self, project_id, node_id, local_issue_name, evidence_file):
+    def export_evidence(self, project_id: str, node_id: str, local_issue_name: str, evidence_file: Path) -> None:
         # Export evidences
         dradis_evidence_content = get_textile_content(evidence_file)
         if dradis_evidence_content:
@@ -582,7 +582,7 @@ class DradisMD:
             errors="ignore",
         )
 
-    def update_project(self, project_id, path):
+    def update_project(self, project_id: str, path: str) -> None:
         project = self.api.get_project(project_id)
         if project.get("message") == NO_RESULT:
             log.error(f"Project {project_id} doesn't exist or you don't have access.")
@@ -635,7 +635,7 @@ class DradisMD:
             else:
                 log.error(f"{path} does not exist")
 
-    def update_item(self, project_id: int, path: Path):
+    def update_item(self, project_id: int, path: Path) -> None:
         """_summary_
 
         Args:
@@ -653,7 +653,7 @@ class DradisMD:
             node_id = self.get_node_id_from_file(project_id, path)
             self.export_evidence(project_id, node_id, path.parent.name, path)
 
-    def get_node_id_from_file(self, project_id, file_path):
+    def get_node_id_from_file(self, project_id: str, file_path: Path) -> str:
         """Return corresponding node id in Dradis for specific local file. Useful to know where to upload attachments"""
         if not self.dradis_nodes:
             self.dradis_nodes = self.api.get_all_nodes(project_id)  # get list of nodes for project
@@ -675,7 +675,7 @@ class DradisMD:
     #                                                   #
     #####################################################
 
-    def list_issues_in_library(self, search_term):
+    def list_issues_in_library(self, search_term: str = None):
         if not self.issue_library:
             self.issue_library = self.api.get_all_standard_issues()
 
@@ -695,8 +695,7 @@ class DradisMD:
                 # Find a matching word at 80%
                 for word in issue["title"].split():
                     for keyword in search_term.split():
-                        # print(keyword)
-                        match_ratio = SequenceMatcher(None, keyword, word).ratio()
+                        match_ratio = SequenceMatcher(None, keyword.lower(), word.lower()).ratio()
                         if match_ratio > 0.80:
                             match = True
                             average += match_ratio
@@ -723,7 +722,7 @@ class DradisMD:
                 # highlight keywords
         console.print(sorted_match_table)
 
-    def add_issue(self, project_path, node_name, issue_title=None, issue_id=None):
+    def add_issue(self, project_path: str, node_name: str, issue_title: str = None, issue_id: str = None) -> None:
         if not EVIDENCE_TEMPLATE.is_file():
             log.error(f"The template file to create an empty evidence was not found. Please check config.ini")
         else:
@@ -776,7 +775,7 @@ class DradisMD:
     #####################################################
 
 
-def convert_files(path, output_format=DRADIS_FORMAT):
+def convert_files(path: str, output_format=DRADIS_FORMAT) -> None:
     """Convert file or list of files to desired format
     param path: file or folder
     param output_format: format in list of supported format
@@ -815,7 +814,7 @@ def convert_files(path, output_format=DRADIS_FORMAT):
             log.error(f"{path} is not a folder or file. Please provide a valid folder or file")
 
 
-def pandoc_installed():
+def pandoc_installed() -> bool:
     try:
         pypandoc.get_pandoc_version()
         return True
@@ -825,7 +824,7 @@ def pandoc_installed():
 
 
 # Download pandoc if user wants to
-def get_pandoc():
+def get_pandoc() -> None:
     while (res := input("Do you want pypandoc to install it for you? [Y/n]").lower()) not in {"", "y", "n"}:
         pass
     if res == "" or res[0].lower() == "y":
@@ -844,7 +843,7 @@ def get_pandoc():
         )
 
 
-def convert(content, input_format, output_format) -> str:
+def convert(content: str, input_format: str, output_format: str) -> str:
     """Convert markup content using pandoc"""
 
     import pypandoc  # file convertion https://github.com/NicklasTegner/pypandoc
@@ -886,7 +885,7 @@ def convert(content, input_format, output_format) -> str:
             log.debug(f"No converting needed for this file. Skipping")
 
 
-def convert_file(file_path, input_format, output_format, delete_input_file=True):
+def convert_file(file_path: Path, input_format: str, output_format: str, delete_input_file=True):
 
     file_path = Path(file_path)
     output_extension = SUPPORTED_FORMAT[output_format]
@@ -901,7 +900,7 @@ def convert_file(file_path, input_format, output_format, delete_input_file=True)
         file_path.unlink()
 
 
-def replace_unecessary_escape(text: str):
+def replace_unecessary_escape(text: str) -> str:
     # Pandoc has "too agressive" char escape: https://github.com/jgm/pandoc/issues/6259
     # No option allow to disable char escaping when not necessary with GFM output
     # We have to replace escaped char from the pandoc output manually
@@ -956,14 +955,13 @@ def get_textile_content(file: Path) -> str:
 def get_title(content: str) -> str:
     """get title from bloc or return empty string if not found"""
     match = re.search(TITLE_REGEX, content)
-    title = match.group(1)  # get section title from file
-    if not match or title.startswith("#["):
-        return ""
+    if match:
+        return match.group(1)  # get section title from file
     else:
-        return title
+        return ""
 
 
-def guess_format(extension):
+def guess_format(extension) -> str:
     """guess file format from extension of file"""
     return list(SUPPORTED_FORMAT.keys())[list(SUPPORTED_FORMAT.values()).index(extension)]
 
@@ -1025,7 +1023,7 @@ def walk_directory(directory: Path, tree: Tree) -> None:
             tree.add(Text(icon) + text_filename)
 
 
-def test_connection(url):
+def test_connection(url) -> bool:
     accepted_code = [200, 302]
     timeout_time = 10
     ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0"
@@ -1043,15 +1041,8 @@ def test_connection(url):
     return resp.status_code in accepted_code
 
 
-def rename_attachments_from_file(file_path, renaming_format):
-    """Parse and rename attachments with the renaming format
-    Example:
-    renaming_format=[section_title]_[section]_[foldername]_[caption]
-
-    ![Reflected XSS](/xss/202205101428.png)
-    will become
-    ![Reflected XSS](/xss/Attack%20Narrative_04_xss_Reflected_XSS.png)
-    """
+def rename_attachments_from_file(file_path, renaming_format) -> str:
+    """Parse and rename attachments with the renaming format"""
 
     log.info(f"Renaming attachments in {file_path}")
     if not renaming_format:
@@ -1097,7 +1088,7 @@ def rename_attachments_from_file(file_path, renaming_format):
             work_file.write_text(content, encoding="utf8", newline=LINE_RETURN)
 
 
-def print_help():
+def print_help() -> None:
     """Print help message"""
     help_table = Table(show_header=True, box=None, padding=(1, 2), collapse_padding=True)
     help_table.add_column("Action\n    [dim][--option][dim]", style="highlight")
@@ -1105,7 +1096,7 @@ def print_help():
     help_table.add_column("Description")
     help_table.add_row("--help", "", "Show this help message")
     help_table.add_row(
-        "projects\n    [dim][--head][/dim]",
+        "projects\n    [dim][--last][/dim]",
         "\n[dim]<number>[/dim]",
         "List projects with their IDs in last updated order\n[dim]Show only last X projects[/dim]",
     )
@@ -1139,7 +1130,7 @@ def print_help():
 
     console.print(help_table)
     console.print(
-        "[highlight]Example of use:[/highlight]\npython dradismd.py [args]projects[/args]\npython dradismd.py [args]get 47 /workfolder/pentests [dim]--format markdown[/dim][/args]",
+        "[highlight]Example of use:[/highlight]\npython dradismd.py [args]projects -l 10[/args]\npython dradismd.py [args]get 47 /workfolder/pentests [dim]--format markdown[/dim][/args]",
         style=None,
     )
 
@@ -1150,10 +1141,10 @@ def arg_parser():
     parser = argparse.ArgumentParser("", add_help=False)
     subparsers = parser.add_subparsers(title="action", description="Possible action", dest="action")
 
-    # list projects:            list [--last <amount>]
+    # list projects:            projects [--last <amount>]
     parser_list = subparsers.add_parser("list", aliases=("l", "lp", "project", "projects", "list_projects"))
     parser_list.set_defaults(action="list_projects")
-    parser_list.add_argument("--head", action="store", type=int, nargs="?", const=5)
+    parser_list.add_argument("--last", "-l", action="store", type=int, nargs="?", const=5)
 
     # get project:           get <projectid> <path> [--format <format>]
     parser_import = subparsers.add_parser("get", aliases=("import"))
@@ -1229,7 +1220,7 @@ def main():
     if args.help:
         print_help()
     elif args.action == "list_projects":
-        dradis.list_projects(args.head or 0)
+        dradis.list_projects(args.last or 0)
     elif args.action == "get":
         dradis.import_project(args.project_id, args.destination or ".", args.format or DRADIS_FORMAT)
     elif args.action == "update":
