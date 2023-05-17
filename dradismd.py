@@ -1142,30 +1142,30 @@ def arg_parser():
     subparsers = parser.add_subparsers(title="action", description="Possible action", dest="action")
 
     # list projects:            projects [--last <amount>]
-    parser_list = subparsers.add_parser("list", aliases=("l", "lp", "project", "projects", "list_projects"))
+    parser_list = subparsers.add_parser("list", aliases=["l", "lp", "project", "projects", "list_projects"])
     parser_list.set_defaults(action="list_projects")
     parser_list.add_argument("--last", "-l", action="store", type=int, nargs="?", const=5)
 
     # get project:           get <projectid> <path> [--format <format>]
-    parser_import = subparsers.add_parser("get", aliases=("import"))
+    parser_import = subparsers.add_parser("get", aliases=["import"])
     parser_import.set_defaults(action="get")
     parser_import.add_argument("project_id", action="store")
     parser_import.add_argument("destination", action="store", nargs="?")
     parser_import.add_argument("--format", action="store", nargs="?", const=DEFAULT_FORMAT)
 
     # update project:           update <projectid> <file | folder>
-    parser_export = subparsers.add_parser("update", aliases=("export"))
+    parser_export = subparsers.add_parser("update", aliases=["export"])
     parser_export.set_defaults(action="update")
     parser_export.add_argument("project_id", action="store")
     parser_export.add_argument("path", action="store", nargs="?")
-
+    
     # list issue in library :           list_issue [keyword]
-    parser_list_issues = subparsers.add_parser("issue", aliases=("list_issues", "issues", "issue", "li", "search"))
+    parser_list_issues = subparsers.add_parser("issue", aliases=["list_issues", "issues", "issue", "li", "search"])
     parser_list_issues.set_defaults(action="list_issues")
     parser_list_issues.add_argument("search_term", action="store", nargs="?")
 
     # add local issue:           add_issue  <path> [node_name] [--format <format>]
-    parser_add_issue = subparsers.add_parser("add_issue", aliases=("add", "new_issue"))
+    parser_add_issue = subparsers.add_parser("add_issue", aliases=["add", "new_issue"])
     parser_add_issue.set_defaults(action="add_issue")
     parser_add_issue.add_argument("project_path", action="store", nargs="?")
     parser_add_issue.add_argument("--node", "-n", action="store", nargs="?")
