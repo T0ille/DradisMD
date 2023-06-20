@@ -6,3 +6,8 @@ Zsh completion script are located in this folder. The script should be copied in
 cp _dradismd /usr/share/zsh/vendor-completions/_dradismd
 ```
 
+Usual location on arch :
+
+```
+cp _dradismd /usr/share/zsh/site-functions/_dradismd
+```

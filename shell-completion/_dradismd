@@ -58,7 +58,7 @@ function _dradismd_projects {
 function _dradismd_get {
     # Getting list of id formated with Name of project as description 
     # Example : "001\:'project1' 002\:project2 003\:'project3'"
-    dradisId=$(dradismd project|tail -n +5|head -n -1|awk '{print $2 "\\\\:\\\x27" $4 "\\\x27"}'|xargs)
+    dradisId=$(dradismd project 2> /dev/null |tail -n +5|head -n -1|awk  -F│ '{gsub(/^[ \t]+|[ \t]+$/, "", $2);gsub(/^[ \t]+|[ \t]+$/, "", $3);if ($2) print $2 "\\\\:\\\x27" $3 "\\\x27"}'|xargs)
     _arguments \
 	    "1:project_id:(($dradisId))"\
 	    "2:destination_folder:_path_files"\
@@ -81,7 +81,7 @@ function _dradismd_add_issue {
 function _dradismd_update {
     # Getting list of id formated with Name of project as description 
     # Example : "001\:'project1' 002\:project2 003\:'project3'"
-    dradisId=$(dradismd project|tail -n +5|head -n -1|awk '{print $2 "\\\\:\\\x27" $4 "\\\x27"}'|xargs)
+    dradisId=$(dradismd project 2> /dev/null |tail -n +5|head -n -1|awk  -F│ '{gsub(/^[ \t]+|[ \t]+$/, "", $2);gsub(/^[ \t]+|[ \t]+$/, "", $3);if ($2) print $2 "\\\\:\\\x27" $3 "\\\x27"}'|xargs)
     _arguments \
 	"1:project_id:(($dradisId))"\
 	"2:Source folder:_path_files"
