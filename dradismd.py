@@ -576,7 +576,7 @@ class DradisMD:
 
         # Append evidenceID to the local file : allows to update this evidence later on
         evidence.write_text(
-            f"{evidence_content}\n#[EvidenceID]#\n\n{evidence_id}\n",
+            f"{evidence_content}\n\n#[EvidenceID]#\n\n{evidence_id}\n",
             encoding="utf8",
             newline=LINE_RETURN,
             errors="ignore",
@@ -1147,14 +1147,14 @@ def arg_parser():
     parser_list.add_argument("--last", "-l", action="store", type=int, nargs="?", const=5)
 
     # get project:           get <projectid> <path> [--format <format>]
-    parser_import = subparsers.add_parser("get", aliases=("import"))
+    parser_import = subparsers.add_parser("get", aliases=("import","i"))
     parser_import.set_defaults(action="get")
     parser_import.add_argument("project_id", action="store")
     parser_import.add_argument("destination", action="store", nargs="?")
     parser_import.add_argument("--format", action="store", nargs="?", const=DEFAULT_FORMAT)
 
     # update project:           update <projectid> <file | folder>
-    parser_export = subparsers.add_parser("update", aliases=("export"))
+    parser_export = subparsers.add_parser("update", aliases=("export","u"))
     parser_export.set_defaults(action="update")
     parser_export.add_argument("project_id", action="store")
     parser_export.add_argument("path", action="store", nargs="?")
