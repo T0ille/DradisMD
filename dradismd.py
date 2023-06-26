@@ -576,7 +576,7 @@ class DradisMD:
 
         # Append evidenceID to the local file : allows to update this evidence later on
         evidence.write_text(
-            f"{evidence_content}\n#[EvidenceID]#\n\n{evidence_id}\n",
+            f"{evidence_content}\n\n#[EvidenceID]#\n\n{evidence_id}\n",
             encoding="utf8",
             newline=LINE_RETURN,
             errors="ignore",
