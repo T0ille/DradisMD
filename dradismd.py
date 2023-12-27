@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 """
-Toolbox to export import from Dradis to a local textile/markdown files, export files to a project directly, upload attachments to a project
-and handle name/path in content blocks and finding
+DradisMD 
+This tool provides a CLI for effortlessly exporting and importing Dradis projects to local files. Among its standout features are:
+    List and filter projects
+    Convert textile to markdown
+    Effortlessly upload attachments
 
 """
 import sys
@@ -46,15 +49,19 @@ install()
 #                                                   #
 #####################################################
 
-DRADISMD_VERSION = "0.3.0"
+DRADISMD_VERSION = "0.3.2"
 
 SCRIPT_PATH = Path(__file__).parent  # location of dradismd.py
 CONFIG_FILE = Path(f"{SCRIPT_PATH}/config.ini")  # location of config file
 DATE_FORMAT = "%d/%m/%Y %H:%M"  # 17/10/2021 16:31
 LINE_RETURN = "\n"  # force UNIX line return when writing files
 
-ISSUE_TEMPLATE = Path(f"{SCRIPT_PATH}/issue_template.textile")  # location of issue template
-EVIDENCE_TEMPLATE = Path(f"{SCRIPT_PATH}/evidence_template.textile")  # location of evidence template
+ISSUE_TEMPLATE = Path(
+    f"{SCRIPT_PATH}/issue_template.textile"
+)  # location of issue template
+EVIDENCE_TEMPLATE = Path(
+    f"{SCRIPT_PATH}/evidence_template.textile"
+)  # location of evidence template
 
 DRADIS_FORMAT = "textile"
 SUPPORTED_INPUT = [".textile", ".md"]  # input formats for pandoc
@@ -65,6 +72,7 @@ SUPPORTED_FORMAT = {  # supported format for convertion
     # "word": ".docx",
 }
 
+MATCH_RATIO = 0.80
 
 # PRINT STYLES
 OUTPUT_STYLE = {
@@ -80,12 +88,16 @@ OUTPUT_STYLE = {
 console = Console(theme=Theme(OUTPUT_STYLE))
 
 FORMAT = "%(message)s"
-logging.basicConfig(level="CRITICAL", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()])
+logging.basicConfig(
+    level="CRITICAL", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+)
 log = logging.getLogger("rich")
 logging.getLogger("requests").setLevel(logging.CRITICAL)
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 
-TITLE_REGEX = f"#\[Title]#+[\r\n]+([^\r\n]+)"  # Regex to grab Title value from Dradis content
+TITLE_REGEX = (
+    f"#\[Title]#+[\r\n]+([^\r\n]+)"  # Regex to grab Title value from Dradis content
+)
 EVIDENCE_ID_REGEX = f"#\[EvidenceID]#+[\r\n]+([^\r\n]+)"
 FIELD_REGEX = f"(#\[?.*\]#)+[\r\n]+([^\r\n]+)"  # Regex to grab any field value from Dradis content
 NOW = datetime.now()
@@ -125,9 +137,13 @@ try:
             log.setLevel(logging.ERROR)
 
         try:
-            VERIFY_SSL = config["SETTINGS"]["ssl_certificate"]  # path to certfile for manual SSL validation
+            VERIFY_SSL = config["SETTINGS"][
+                "ssl_certificate"
+            ]  # path to certfile for manual SSL validation
             if VERIFY_SSL.lower() == "false":
-                log.warning(f"⚠️ DISABLING SSL VERIFICATION ⚠️ Should only be used for testing")
+                log.warning(
+                    f"⚠️ DISABLING SSL VERIFICATION ⚠️ Should only be used for testing"
+                )
                 VERIFY_SSL = False
                 import urllib3
 
@@ -135,11 +151,15 @@ try:
             elif VERIFY_SSL == "":
                 VERIFY_SSL = True
             elif not Path(VERIFY_SSL).is_file():
-                log.warning(f"The SSL certificate {VERIFY_SSL} was not found, enabling default SSL behavior")
+                log.warning(
+                    f"The SSL certificate {VERIFY_SSL} was not found, enabling default SSL behavior"
+                )
                 VERIFY_SSL = True
         except:
             # if ssl_certificate key is missing/error reading file, enable verification
-            log.warning("The SSL certificate could not be loaded, enabling default SSL behavior")
+            log.warning(
+                "The SSL certificate could not be loaded, enabling default SSL behavior"
+            )
             VERIFY_SSL = True
 
 
@@ -164,29 +184,23 @@ class DradisMD:
         self.issue_library = {}
         self.last_update = {}
 
-    def list_projects(self, last: int) -> None:
+    def list_projects(self, last: int, search_criteria: str, search_term: str) -> None:
         """List all Dradis project
         param last: Show only Top n project (optional)
         """
-        # TODO add filter to search keywords
         log.debug(f"Listing Dradis Projects")
         self.projects = self.api.get_all_projects()
 
         # Sort projects by last updated
-        sorted_projects = sorted(self.projects, key=lambda k: k["updated_at"], reverse=True)
-
-        # Get only top X project
-        if last > 0 and last < len(sorted_projects):
-            sorted_projects = sorted_projects[: int(last)]
-
-        # Logs for debug
-        log.debug(sorted_projects)
+        sorted_projects = sorted(
+            self.projects, key=lambda k: k["updated_at"], reverse=True
+        )
 
         # Table of projects - Columns
         project_list_table = Table(show_header=True, header_style="bold white on blue")
         project_list_table.add_column("ID", style="cyan", width=4, justify="center")
         project_list_table.add_column("Name")
-        project_list_table.add_column("Client")
+        project_list_table.add_column("Team")
         project_list_table.add_column("Last update", style="dim")
 
         # Add optional columns to show from custom fields in config.ini
@@ -197,12 +211,43 @@ class DradisMD:
             if column.strip() != "":
                 project_list_table.add_column(column)
 
+        # Apply filter with search term (Team / Project name / Author)
+        if search_criteria:
+            match_list = []
+            search = Search(search_term)
+            for project in sorted_projects:
+                # Find a matching word for one of the following criteria
+                if search_criteria == "team":
+                    if "team" in project:
+                        for word in project["team"]["name"].split():
+                            search.search_in_string(word)
+                elif search_criteria == "project":
+                    for word in project[
+                        "na                                                                                                                                                                                      me"
+                    ].split():
+                        search.search_in_string(word)
+                elif search_criteria == "authors":
+                    for word in project["authors"]["email"].split():
+                        search.search_in_string(word)
+
+                if search.match:
+                    match_list.append(project)
+
+            sorted_projects = match_list
+
+        # Get only top X project
+        if last > 0 and last < len(sorted_projects):
+            sorted_projects = sorted_projects[: int(last)]
+
+        # Logs for debug
+        log.debug(sorted_projects)
+
         # Table of projects -  Rows
         for project in sorted_projects:
-            if "client" in project:
-                client = f"{project['client']['name']}"
+            if "team" in project:
+                team = f"{project['team']['name']}"
             else:
-                client = f"[warning]none[/warning]"
+                team = f"[warning]none[/warning]"
 
             updated_date = datetime.fromisoformat(project["updated_at"][:-1])
             time_ago = timeago.format(updated_date, NOW)
@@ -211,7 +256,7 @@ class DradisMD:
             new_row = (
                 f"{project['id']}",
                 f"{project['name']}",
-                f"{client}",
+                f"{team}",
                 f"{updated_date} ({time_ago})",
             )
 
@@ -219,7 +264,11 @@ class DradisMD:
             for column in custom_columns:
                 if column.strip() != "":
                     field = next(
-                        (field for field in project["custom_fields"] if field["name"] == column),
+                        (
+                            field
+                            for field in project["custom_fields"]
+                            if field["name"] == column
+                        ),
                         None,
                     )
                     if field:
@@ -238,7 +287,9 @@ class DradisMD:
     #                  Import functions                 #
     #                                                   #
     #####################################################
-    def import_content_blocks(self, project_path: Path, project_id: id, format: str) -> None:
+    def import_content_blocks(
+        self, project_path: Path, project_id: id, format: str
+    ) -> None:
         """Import all content blocks
         param project_path: Folder where to create local files
         param project_id: Dradis Project id
@@ -251,10 +302,14 @@ class DradisMD:
         content_blocks = self.api.get_all_contentblocks(project_id)
         log.debug(f"Import Report Content blocks\n")
         for block in content_blocks:
-            log.debug(f"Creating file for {block['fields']['Title']} Sections Length: {len(block['content'])}")
+            log.debug(
+                f"Creating file for {block['fields']['Title']} Sections Length: {len(block['content'])}"
+            )
             filename = f"{clean_filename(block['fields']['Title'])}.textile"
             file = Path(f"{path}/{filename}")
-            file.write_text(block["content"], encoding="utf8", errors="ignore", newline=LINE_RETURN)
+            file.write_text(
+                block["content"], encoding="utf8", errors="ignore", newline=LINE_RETURN
+            )
             if format != DRADIS_FORMAT:
                 convert_file(file, DRADIS_FORMAT, format, True)
 
@@ -269,7 +324,9 @@ class DradisMD:
         for document_property in document_properties:
             for key, value in document_property.items():
                 file_content = f"{file_content}{key}={value}\n"
-        properties_file.write_text(file_content, encoding="utf8", errors="ignore", newline=LINE_RETURN)
+        properties_file.write_text(
+            file_content, encoding="utf8", errors="ignore", newline=LINE_RETURN
+        )
         log.info(f"document_properties.ini was created")
 
     def import_issues(self, path: Path, project_id: int, format: str) -> None:
@@ -286,10 +343,14 @@ class DradisMD:
             issue_content = issue["text"]
             filename = f"{clean_filename(title)}.textile"
 
-            log.debug(f"Creating file for {title} Sections Length: {len(issue_content)}")
+            log.debug(
+                f"Creating file for {title} Sections Length: {len(issue_content)}"
+            )
 
             issue_file = Path(f"{path}/{filename}")
-            issue_file.write_text(issue_content, encoding="utf8", errors="ignore", newline=LINE_RETURN)
+            issue_file.write_text(
+                issue_content, encoding="utf8", errors="ignore", newline=LINE_RETURN
+            )
 
             if format != DRADIS_FORMAT:
                 convert_file(issue_file, "textile", format, True)
@@ -307,10 +368,14 @@ class DradisMD:
             # import the evidences
             for index, evidence in enumerate(node["evidence"]):
                 issue_name = evidence["issue"]["title"]
-                evidences_path = Path(f"{node_path}/Evidences/{clean_filename(issue_name)}/")
+                evidences_path = Path(
+                    f"{node_path}/Evidences/{clean_filename(issue_name)}/"
+                )
                 evidences_path.mkdir(parents=True, exist_ok=True)
                 evidence_content = evidence["content"]
-                log.debug(f"Creating evidence file for {issue_name} Sections Length: {len(evidence_content)}")
+                log.debug(
+                    f"Creating evidence file for {issue_name} Sections Length: {len(evidence_content)}"
+                )
                 filename = f"Evidence-{index+1}-{clean_filename(issue_name)}.textile"
                 evidence_file = Path(f"{evidences_path}/{filename}")
                 log.debug(evidence_content)
@@ -330,7 +395,9 @@ class DradisMD:
         if project.get("message") == NO_RESULT:
             log.error(f"Project {project_id} doesn't exist or you don't have access.")
         else:
-            path = destination.rstrip('"')  # strip any Windows path extra " (path with space)
+            path = destination.rstrip(
+                '"'
+            )  # strip any Windows path extra " (path with space)
             if not Path(path).is_dir():
                 log.error(f"The local folder {path} does not exist")
                 raise SystemExit()
@@ -361,12 +428,18 @@ class DradisMD:
     #                                                   #
     #####################################################
 
-    def handle_attachments(self, project_id: str, node_id: str, content: str, file_path: Path) -> str:
+    def handle_attachments(
+        self, project_id: str, node_id: str, content: str, file_path: Path
+    ) -> str:
         """Upload attachments from textile content to Dradis and return the content with the updated Dradis file path"""
 
         existing_nodes_attachments = self.api.get_all_attachments(project_id, node_id)
-        log.debug(f"The following attachments exist in the node: {existing_nodes_attachments}")
-        r = re.compile("(?P<match>!(?P<path>.*?)(?P<caption>\(.*?)?!)")  #  !/path/attachments(optional_caption)!
+        log.debug(
+            f"The following attachments exist in the node: {existing_nodes_attachments}"
+        )
+        r = re.compile(
+            "(?P<match>!(?P<path>.*?)(?P<caption>\(.*?)?!)"
+        )  #  !/path/attachments(optional_caption)!
         attachments = [m.groupdict() for m in r.finditer(content)]
         if attachments:
             log.debug(f"handling attachment: {attachments}")
@@ -378,13 +451,18 @@ class DradisMD:
 
                 # check if file to upload already exists
                 if not any(
-                    d["filename"] == attachment_path.name.replace("%20", " ") for d in existing_nodes_attachments
+                    d["filename"] == attachment_path.name.replace("%20", " ")
+                    for d in existing_nodes_attachments
                 ):
                     full_attachments_path = Path.resolve(
-                        Path.joinpath(file_path, attachment_path.as_posix().replace("%20", " "))
+                        Path.joinpath(
+                            file_path, attachment_path.as_posix().replace("%20", " ")
+                        )
                     )
                     if not full_attachments_path.is_file():
-                        log.warning(f"{full_attachments_path} was not found. File missing? Skipping")
+                        log.warning(
+                            f"{full_attachments_path} was not found. File missing? Skipping"
+                        )
                         continue
                     else:
                         files.append(full_attachments_path)
@@ -415,7 +493,9 @@ class DradisMD:
                 self.api.create_attachment(project_id, node_id, *files)
         return content
 
-    def export_content_block(self, project_id: str, file: Path, force: bool = False) -> None:
+    def export_content_block(
+        self, project_id: str, file: Path, force: bool = False
+    ) -> None:
         """
         Export content block file to Dradis
         """
@@ -431,10 +511,14 @@ class DradisMD:
             else:
                 log.debug(f"processing [{title}] content bloc")
                 node_id = self.get_node_id_from_file(project_id, file)
-                content = self.handle_attachments(project_id, node_id, content, file.parent)
+                content = self.handle_attachments(
+                    project_id, node_id, content, file.parent
+                )
                 dradis_content_blocks = self.api.get_all_contentblocks(project_id)
 
-                title_found = get_item_from_dict_list(dradis_content_blocks, "title", title)
+                title_found = get_item_from_dict_list(
+                    dradis_content_blocks, "title", title
+                )
 
                 # create new block
                 if not title_found:
@@ -445,11 +529,15 @@ class DradisMD:
                 else:
                     log.info(f"Updating content block {title}")
                     block_id = title_found["id"]
-                    dradis_last_modified = datetime.fromisoformat(self.last_update[:-1]).timestamp()
+                    dradis_last_modified = datetime.fromisoformat(
+                        self.last_update[:-1]
+                    ).timestamp()
                     local_last_modified = file.stat().st_mtime
                     # if local_last_modified > dradis_last_modified:
                     try:
-                        result = self.api.update_contentblock(project_id, block_id, content)
+                        result = self.api.update_contentblock(
+                            project_id, block_id, content
+                        )
                         log.debug(result)
                     except DradisException as e:
                         log.error(f"DradisException: {e.__context__}")
@@ -498,7 +586,9 @@ class DradisMD:
         if not self.dradis_nodes:
             self.dradis_nodes = self.api.get_all_nodes(project_id)
 
-        node_found = get_item_from_dict_list(self.dradis_nodes, "label", node_folder.name)
+        node_found = get_item_from_dict_list(
+            self.dradis_nodes, "label", node_folder.name
+        )
         if not node_found:  # create new node
             log.info(f"Creating node {node_folder.name}")
             result = self.api.create_node(project_id, node_folder.name, 1)
@@ -514,7 +604,9 @@ class DradisMD:
         else:
             log.debug("Exporting evidences")
 
-            evidence_issue_folders = get_folders_in_folder(evidence_path)  # list of issue folders in evidence folder
+            evidence_issue_folders = get_folders_in_folder(
+                evidence_path
+            )  # list of issue folders in evidence folder
             # For each issue
             for issue_folder in evidence_issue_folders:
                 evidence_list_for_issue = get_files_in_folder(issue_folder)
@@ -522,24 +614,32 @@ class DradisMD:
                 for file in evidence_list_for_issue:
                     self.export_evidence(project_id, node_id, issue_folder.name, file)
 
-    def export_evidence(self, project_id: str, node_id: str, local_issue_name: str, evidence_file: Path) -> None:
+    def export_evidence(
+        self, project_id: str, node_id: str, local_issue_name: str, evidence_file: Path
+    ) -> None:
         # Export evidences
         dradis_evidence_content = get_textile_content(evidence_file)
         if dradis_evidence_content:
             # check if issue folder (local) exists on Dradis
             if not self.issue_list:
                 self.issue_list = self.api.get_all_issues(project_id)
-            issue_found = get_item_from_dict_list(self.issue_list, "title", local_issue_name)
+            issue_found = get_item_from_dict_list(
+                self.issue_list, "title", local_issue_name
+            )
 
             if not issue_found:
-                log.warning(f"The issue {local_issue_name} was not found on Dradis, skipping evidence export")
+                log.warning(
+                    f"The issue {local_issue_name} was not found on Dradis, skipping evidence export"
+                )
             else:
                 dradis_evidence_content = self.handle_attachments(
                     project_id, node_id, dradis_evidence_content, evidence_file.parent
                 )
 
                 # Get evidence ID
-                evidence_id_found = re.search(EVIDENCE_ID_REGEX, dradis_evidence_content)
+                evidence_id_found = re.search(
+                    EVIDENCE_ID_REGEX, dradis_evidence_content
+                )
 
                 # Update evidence that has same evidenceID
                 if evidence_id_found:
@@ -556,7 +656,9 @@ class DradisMD:
                         log.debug(result)
 
                     except:
-                        log.warning(f"Could not update {evidence_id}, creating new evidenceID")
+                        log.warning(
+                            f"Could not update {evidence_id}, creating new evidenceID"
+                        )
                         self.new_evidence(
                             project_id,
                             node_id,
@@ -587,7 +689,9 @@ class DradisMD:
         erase_previous_id=False,
     ) -> int:
         # Create the new evidence and collect evidenceID
-        result = self.api.create_evidence(project_id, node_id, issue_id, dradis_evidence_content)
+        result = self.api.create_evidence(
+            project_id, node_id, issue_id, dradis_evidence_content
+        )
         evidence_id = result.get("id", None)
 
         evidence_content = evidence.read_text(encoding="utf8", errors="ignore")
@@ -620,7 +724,9 @@ class DradisMD:
                 content_block_path = Path(f"{path}/Content Blocks")
                 if content_block_path.is_dir():
                     log.debug(f"Exporting Content blocks")
-                    content_blocks_files = [f for f in Path(content_block_path).iterdir() if f.is_file()]
+                    content_blocks_files = [
+                        f for f in Path(content_block_path).iterdir() if f.is_file()
+                    ]
                     for file in content_blocks_files:
                         self.export_content_block(project_id, file)
                 else:
@@ -629,7 +735,9 @@ class DradisMD:
                 document_properties_path = Path(f"{path}/document_properties.ini")
                 if document_properties_path.is_file():
                     log.debug(f"Exporting Document Properties")
-                    self.export_document_properties(project_id, document_properties_path)
+                    self.export_document_properties(
+                        project_id, document_properties_path
+                    )
                 else:
                     log.warning(f"No document properties found.")
 
@@ -664,8 +772,8 @@ class DradisMD:
             path (Path): _description_
         """
 
-        ## TODO FIX BUG if inside content block == update file does not work
         log.info(f"{path.name} is being updated to Dradis")
+        path = path.resolve()
         if path.name == "document_properties.ini":
             self.export_document_properties(project_id, path)
         elif path.parent.name == "Content Blocks":
@@ -679,13 +787,23 @@ class DradisMD:
     def get_node_id_from_file(self, project_id: str, file_path: Path) -> str:
         """Return corresponding node id in Dradis for specific local file. Useful to know where to upload attachments"""
         if not self.dradis_nodes:
-            self.dradis_nodes = self.api.get_all_nodes(project_id)  # get list of nodes for project
-        if file_path.parent.name == "Content Blocks":  # /<Project Name>/Content Blocks/file_path
+            self.dradis_nodes = self.api.get_all_nodes(
+                project_id
+            )  # get list of nodes for project
+        if (
+            file_path.parent.name == "Content Blocks"
+        ):  # /<Project Name>/Content Blocks/file_path
             # node id for all Content Blocks is always the one before "Uploaded files" but for some reason is not listed in the list of nodes, thus we need to guess it here
-            uploaded_files_node = get_item_from_dict_list(self.dradis_nodes, "label", "Uploaded files")
+            uploaded_files_node = get_item_from_dict_list(
+                self.dradis_nodes, "label", "Uploaded files"
+            )
             node_id = f"{uploaded_files_node['id']-1}"
-        elif file_path.parent.parent.name == "Evidences":  # /<Project Name>/Nodes/<Node Name>/Evidences/file_path
-            evidence_node = get_item_from_dict_list(self.dradis_nodes, "label", file_path.parent.parent.parent.name)
+        elif (
+            file_path.parent.parent.name == "Evidences"
+        ):  # /<Project Name>/Nodes/<Node Name>/Evidences/file_path
+            evidence_node = get_item_from_dict_list(
+                self.dradis_nodes, "label", file_path.parent.parent.parent.name
+            )
             node_id = f"{evidence_node['id']}"
         else:
             log.error(f"Could not find node id for {file_path} ")
@@ -707,6 +825,7 @@ class DradisMD:
         sorted_match_table.add_column("ID", style="cyan", width=4, justify="center")
         sorted_match_table.add_column("Title")
 
+        # Apply filter with search term
         if search_term:
             match_list = []
             for issue in self.issue_library:
@@ -716,7 +835,9 @@ class DradisMD:
                 # Find a matching word at 80%
                 for word in issue["title"].split():
                     for keyword in search_term.split():
-                        match_ratio = SequenceMatcher(None, keyword.lower(), word.lower()).ratio()
+                        match_ratio = SequenceMatcher(
+                            None, keyword.lower(), word.lower()
+                        ).ratio()
                         if match_ratio > 0.80:
                             match = True
                             average += match_ratio
@@ -727,13 +848,17 @@ class DradisMD:
                     issue["keywords"] = keywords_found
                     match_list.append(issue)
 
-            sorted_match = sorted(list(match_list), key=lambda k: k["match_ratio"], reverse=True)
+            sorted_match = sorted(
+                list(match_list), key=lambda k: k["match_ratio"], reverse=True
+            )
             sorted_match_table.add_column("Matching search at", style="dim")
 
             for issue in sorted_match:
                 # highligh keyword in title
                 for keyword in issue["keywords"]:
-                    issue["title"] = issue["title"].replace(keyword, f"[highlight]{keyword}[/highlight]")
+                    issue["title"] = issue["title"].replace(
+                        keyword, f"[highlight]{keyword}[/highlight]"
+                    )
                 sorted_match_table.add_row(
                     str(issue["id"]),
                     issue["title"],
@@ -742,7 +867,6 @@ class DradisMD:
         else:
             for issue in self.issue_library:
                 sorted_match_table.add_row(str(issue["id"]), issue["title"])
-                # highlight keywords
         console.print(sorted_match_table)
 
     def add_issue(
@@ -753,15 +877,23 @@ class DradisMD:
         issue_id: str = None,
     ) -> None:
         if not EVIDENCE_TEMPLATE.is_file():
-            log.error(f"The template file to create an empty evidence was not found. Please check config.ini")
+            log.error(
+                f"The template file to create an empty evidence was not found. Please check config.ini"
+            )
         else:
             # If new blank evidence from template
             if not issue_id:
                 if not ISSUE_TEMPLATE.is_file():
-                    log.error("The template file to create an empty issue was not found. Please check config.ini")
+                    log.error(
+                        "The template file to create an empty issue was not found. Please check config.ini"
+                    )
                 else:
-                    issue_content = ISSUE_TEMPLATE.read_text(encoding="utf8", errors="ignore")
-                    issue_content = issue_content.replace("#[Title]#", f"#[Title]#\n{issue_title}")
+                    issue_content = ISSUE_TEMPLATE.read_text(
+                        encoding="utf8", errors="ignore"
+                    )
+                    issue_content = issue_content.replace(
+                        "#[Title]#", f"#[Title]#\n{issue_title}"
+                    )
 
             # If import from library
             else:
@@ -773,14 +905,20 @@ class DradisMD:
             issue_folder_path = Path(f"{project_path}/Issues")
             issue_folder_path.mkdir(exist_ok=True, parents=True)
             extension = SUPPORTED_FORMAT[DEFAULT_FORMAT]
-            log.info(f"Creating local issue: {issue_folder_path}/{issue_title}{extension}")
+            log.info(
+                f"Creating local issue: {issue_folder_path}/{issue_title}{extension}"
+            )
             Path(f"{issue_folder_path}/{issue_title}{extension}").write_text(
                 issue_content, encoding="utf8", newline=LINE_RETURN, errors="ignore"
             )
             # Create evidence
             if node_name:
-                evidence_content = EVIDENCE_TEMPLATE.read_text(encoding="utf8", errors="ignore")
-                evidence_folder_path = Path(f"{project_path}/Nodes/{node_name}/Evidences/{issue_title}")
+                evidence_content = EVIDENCE_TEMPLATE.read_text(
+                    encoding="utf8", errors="ignore"
+                )
+                evidence_folder_path = Path(
+                    f"{project_path}/Nodes/{node_name}/Evidences/{issue_title}"
+                )
                 evidence_folder_path.mkdir(exist_ok=True, parents=True)
                 evidence_file = Path(f"{evidence_folder_path}/Evidence{extension}")
                 while evidence_file.is_file():
@@ -792,7 +930,9 @@ class DradisMD:
                         )
                         log.debug(f"Evidence {evidence_file}")
                     else:
-                        evidence_file = Path(f"{evidence_folder_path}/Evidence2{extension}")
+                        evidence_file = Path(
+                            f"{evidence_folder_path}/Evidence2{extension}"
+                        )
                         log.debug(f"Evidence {evidence_file}")
                 log.info(f"Creating local issue: {evidence_file}")
                 evidence_file.write_text(
@@ -832,7 +972,9 @@ def convert_files(path: str, output_format=DRADIS_FORMAT) -> None:
             filelist = path.rglob("*")  # list file in directory + sub-dir
             for file in filelist:
                 extension = file.suffix
-                if extension in SUPPORTED_INPUT:  # only convert from files with valid markup format
+                if (
+                    extension in SUPPORTED_INPUT
+                ):  # only convert from files with valid markup format
                     input_format = guess_format(extension)
                     convert_file(file, input_format, output_format, False)
         # File
@@ -842,10 +984,14 @@ def convert_files(path: str, output_format=DRADIS_FORMAT) -> None:
                 input_format = guess_format(extension)
                 convert_file(path, input_format, output_format, False)
             else:
-                log.warning(f"Extension {extension} not supported. Expecting {SUPPORTED_INPUT}")
+                log.warning(
+                    f"Extension {extension} not supported. Expecting {SUPPORTED_INPUT}"
+                )
         # Not found
         else:
-            log.error(f"{path} is not a folder or file. Please provide a valid folder or file")
+            log.error(
+                f"{path} is not a folder or file. Please provide a valid folder or file"
+            )
 
 
 def pandoc_installed() -> bool:
@@ -860,7 +1006,9 @@ def pandoc_installed() -> bool:
 
 # Download pandoc if user wants to
 def get_pandoc() -> None:
-    while (res := input("Do you want pypandoc to install it for you? [Y/n]").lower()) not in {"", "y", "n"}:
+    while (
+        res := input("Do you want pypandoc to install it for you? [Y/n]").lower()
+    ) not in {"", "y", "n"}:
         pass
     if res == "" or res[0].lower() == "y":
         # expects an installed pypandoc: pip install pypandoc
@@ -871,7 +1019,9 @@ def get_pandoc() -> None:
         try:
             download_pandoc()
         except:
-            log.error("Pandoc install could not be fully completed. Check if it correctly installed with 'pandoc -v'")
+            log.error(
+                "Pandoc install could not be fully completed. Check if it correctly installed with 'pandoc -v'"
+            )
     else:
         console.print(
             "If you want to convert files, you can install pandoc manually with:\n🐧: sudo apt-get install pandoc\n🍫: choco install pandoc\n🍺: brew install pandoc pandoc-citeproc Caskroom/cask/mactex\n More info: https://pandoc.org/installing.html"
@@ -885,7 +1035,6 @@ def convert(content: str, input_format: str, output_format: str) -> str:
 
     if not pandoc_installed():
         get_pandoc()
-        # TODO: check missing latex pandoc module for converting to PDF/DOCX
     else:
         disabled_pandoc_plugins = ["autolink_bare_uris", "gfm_auto_identifiers"]
         # The list of default pandoc plugin can be obtained with "pandoc --list-extensions=gfm"
@@ -906,20 +1055,26 @@ def convert(content: str, input_format: str, output_format: str) -> str:
                 content = re.sub(
                     FIELD_REGEX, f"\g<1>\r\n\r\n\g<2>", content
                 )  # Make sure there is always 2 {LINE_RETURN} between #[Field]# and their content
-                output = pypandoc.convert_text(content, output_format, format=input_format, extra_args=pandoc_args)
+                output = pypandoc.convert_text(
+                    content, output_format, format=input_format, extra_args=pandoc_args
+                )
                 output = replace_unecessary_escape(output)
                 output = multi_line_table_fix(output)
                 if output_format == "textile":
                     output = html.unescape(output)  # Unescape &
                 return output
             except Exception as e:
-                log.error(f"Content could not be converted. Is this a valid file markup file (md/textile)?")
+                log.error(
+                    f"Content could not be converted. Is this a valid file markup file (md/textile)?"
+                )
                 log.debug(e)
         else:
             log.debug(f"No converting needed for this file. Skipping")
 
 
-def convert_file(file_path: Path, input_format: str, output_format: str, delete_input_file=True):
+def convert_file(
+    file_path: Path, input_format: str, output_format: str, delete_input_file=True
+):
     file_path = Path(file_path)
     output_extension = SUPPORTED_FORMAT[output_format]
     new_file = Path(f"{file_path.parent/file_path.stem}{output_extension}")
@@ -927,7 +1082,9 @@ def convert_file(file_path: Path, input_format: str, output_format: str, delete_
     content = file_path.read_text(encoding="utf8", errors="ignore")
     log.debug(f"File {file_path.name} --> {new_file.name} ")
     new_content = convert(content, input_format, output_format)
-    new_file.write_text(new_content, encoding="utf8", newline=LINE_RETURN, errors="ignore")
+    new_file.write_text(
+        new_content, encoding="utf8", newline=LINE_RETURN, errors="ignore"
+    )
 
     if delete_input_file:  # delete file after converting
         file_path.unlink()
@@ -943,7 +1100,9 @@ def multi_line_table_fix(text: str) -> str:
     if tables:
         log.debug("Converting HTML table to MD")
         for table in tables:
-            table_text = pypandoc.convert_text(table, "markdown+multiline_tables", format="html")
+            table_text = pypandoc.convert_text(
+                table, "markdown+multiline_tables", format="html"
+            )
             text = text.replace(table, table_text)
         log.debug(text)
     return text
@@ -981,7 +1140,9 @@ def get_textile_content(file: Path) -> str:
         if extension in SUPPORTED_INPUT:
             log.debug(f"Reading textile from {file.name} ")
             try:
-                input_format = guess_format(extension)  # get input format from file extension
+                input_format = guess_format(
+                    extension
+                )  # get input format from file extension
                 content = file.read_text(encoding="utf8", errors="ignore")
                 textile_content = convert(content, input_format, "textile")
 
@@ -989,7 +1150,9 @@ def get_textile_content(file: Path) -> str:
                 log.error(f"Error with get_textile_content from {file} :{e}")
                 return ""
         else:
-            log.warning(f"{file.name} was not a valid markup format, skipping Dradis export")
+            log.warning(
+                f"{file.name} was not a valid markup format, skipping Dradis export"
+            )
             return ""
 
     else:
@@ -1014,7 +1177,9 @@ def get_title(content: str) -> str:
 
 def guess_format(extension) -> str:
     """guess file format from extension of file"""
-    return list(SUPPORTED_FORMAT.keys())[list(SUPPORTED_FORMAT.values()).index(extension)]
+    return list(SUPPORTED_FORMAT.keys())[
+        list(SUPPORTED_FORMAT.values()).index(extension)
+    ]
 
 
 def clean_filename(filename: str) -> str:
@@ -1024,12 +1189,38 @@ def clean_filename(filename: str) -> str:
     return filename
 
 
-def get_item_from_dict_list(dict_list: list, key_to_check: str, matching_string: str) -> dict:
+class Search:
+    def __init__(self, search_term: str):
+        # self.keywords_found = []
+        self.search_term = search_term
+        self.match_score = 0
+        self.match = False
+
+    def search_in_string(self, search_target):
+        self.match = False
+        for keyword in self.search_term.split():
+            match_ratio = SequenceMatcher(
+                None, keyword.lower(), search_target.lower()
+            ).ratio()
+            if keyword in search_target:
+                self.match = True
+            elif match_ratio > 0.80:
+                self.match = True
+                self.match_score += match_ratio
+                # self.keywords_found.append(search_target)
+        log.debug(self.search_term)
+        return self
+
+
+def get_item_from_dict_list(
+    dict_list: list, key_to_check: str, matching_string: str
+) -> dict:
     match = next(
         (
             dict
             for dict in dict_list
-            if clean_filename(dict[key_to_check]).lower() == clean_filename(matching_string).lower()
+            if clean_filename(dict[key_to_check]).lower()
+            == clean_filename(matching_string).lower()
         ),
         None,
     )
@@ -1070,20 +1261,28 @@ def walk_directory(directory: Path, tree: Tree) -> None:
             text_filename.stylize(f"link file://{path}")
             file_size = path.stat().st_size
             text_filename.append(f" ({decimal(file_size)})", "dim blue")
-            icon = "📄 " if path.suffix in SUPPORTED_INPUT else "⚙ " if path.suffix == ".ini" else "❔ "
+            icon = (
+                "📄"
+                if path.suffix in SUPPORTED_INPUT
+                else "⚙ "
+                if path.suffix == ".ini"
+                else "❔ "
+            )
             tree.add(Text(icon) + text_filename)
 
 
 def test_connection(url, api_token) -> bool:
-    accepted_code = [200, 302, 404]
-    timeout_time = 10
-    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0"
+    accepted_code = [200, 302]
+    timeout_time = 5
+    ua = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0"
+    )
     req_headers = {
         "User-Agent": ua,
         "Authorization": f"Token token={api_token}",
         "Cookie": "***REMOVED***",
     }
-    url = f"{url}/pro/api/projects/1"
+    url = f"{url}/pro/api/"
     try:
         resp = requests.get(
             url=url,
@@ -1092,8 +1291,11 @@ def test_connection(url, api_token) -> bool:
             timeout=timeout_time,
             verify=VERIFY_SSL,
         )
-    except:
-        return True
+    except requests.exceptions.ConnectionError:
+        log.error(f"Error connecting to {url}")
+        return False
+    if resp.status_code == "403":
+        log.error("Invalid API token")
     return resp.status_code in accepted_code
 
 
@@ -1108,19 +1310,27 @@ def rename_attachments_from_file(file_path, renaming_format) -> str:
         work_file = Path(file_path)
         if work_file.is_file():
             content = work_file.read_text(encoding="utf8", errors="ignore")
-            r = re.compile("(?P<match>!\[(?P<caption>.*?)\]\((?P<path>.*?)\))")  #  ![caption](image)'
+            r = re.compile(
+                "(?P<match>!\[(?P<caption>.*?)\]\((?P<path>.*?)\))"
+            )  #  ![caption](image)'
             attachments = [m.groupdict() for m in r.finditer(content)]
             for index, attachment in enumerate(attachments):
                 attachments_path = Path(attachment.get("path"))
-                full_attachments_path = Path.joinpath(work_file.parent, attachments_path)
+                full_attachments_path = Path.joinpath(
+                    work_file.parent, attachments_path
+                )
                 if not full_attachments_path.is_file():
-                    log.warning(f"{full_attachments_path} was not found. Is attachment missing?")
+                    log.warning(
+                        f"{full_attachments_path} was not found. Is attachment missing?"
+                    )
                 else:
                     title = get_title(content)
                     if not title:
                         section_initials = "ZZZ"
                     else:
-                        section_initials = "".join([x[0].upper() for x in title.split(" ")])
+                        section_initials = "".join(
+                            [x[0].upper() for x in title.split(" ")]
+                        )
                     foldername = full_attachments_path.parent.parent
                     new_filename = (
                         renaming_format.replace("[section_initials]", section_initials)
@@ -1132,7 +1342,9 @@ def rename_attachments_from_file(file_path, renaming_format) -> str:
                     )  # .replace(" ","_")
                     new_path = f"{full_attachments_path.parent}/{new_filename}{attachments_path.suffix}"
                     relative_markdown_path = f"{attachments_path.parent.as_posix()}/{new_filename.replace(' ','%20')}{attachments_path.suffix}"
-                    new_attachment = f"![{attachment.get('caption')}]({relative_markdown_path})"
+                    new_attachment = (
+                        f"![{attachment.get('caption')}]({relative_markdown_path})"
+                    )
                     # log.debug(attachment.get("match"))
                     log.debug(new_attachment)
                     content = content.replace(
@@ -1147,7 +1359,9 @@ def rename_attachments_from_file(file_path, renaming_format) -> str:
 # Custom help menu
 def print_help() -> None:
     """Print help message"""
-    help_table = Table(show_header=True, box=None, padding=(1, 2), collapse_padding=True)
+    help_table = Table(
+        show_header=True, box=None, padding=(1, 2), collapse_padding=True
+    )
     help_table.add_column("Action\n    [dim][--option][dim]", style="highlight")
     help_table.add_column("Arguments", style="args")
     help_table.add_column("Description")
@@ -1173,7 +1387,9 @@ def print_help() -> None:
         "<project_path> --id <id> or --title <title>\n[dim]<node_name>[/dim]",
         "Add an issue to project folder from template or from issue library if --id is used. \n[dim]Create a new evidence too if --node [node_name] is provided[/dim]",
     )
-    help_table.add_row("update", "<project_id> <source>", "Export your local projects files to Dradis")
+    help_table.add_row(
+        "update", "<project_id> <source>", "Export your local projects files to Dradis"
+    )
     help_table.add_row(
         "convert",
         "<folder|file> <format>",
@@ -1195,19 +1411,37 @@ def print_help() -> None:
 def arg_parser():
     # Argument parser
     parser = argparse.ArgumentParser("", add_help=False)
-    subparsers = parser.add_subparsers(title="action", description="Possible action", dest="action")
+    subparsers = parser.add_subparsers(
+        title="action", description="Possible action", dest="action"
+    )
 
     # list projects:            projects [--last <amount>]
-    parser_list = subparsers.add_parser("list", aliases=("project", "projects", "list_projects"))
+    parser_list = subparsers.add_parser(
+        "list", aliases=("project", "projects", "list_projects")
+    )
     parser_list.set_defaults(action="list_projects")
-    parser_list.add_argument("--last", "-l", action="store", type=int, nargs="?", const=5)
+    parser_list.add_argument(
+        "--last", "-l", action="store", type=int, nargs="?", const=5
+    )
+    search_group = parser_list.add_argument_group()
+    search_group.add_argument(
+        "--filter",
+        "-f",
+        action="store",
+        type=str,
+        choices=["team", "project", "author"],
+        const=None,
+    )
+    search_group.add_argument("search_term", action="store", type=str, nargs="?")
 
     # get project:           get <projectid> <path> [--format <format>]
-    parser_import = subparsers.add_parser("get", aliases=("import"))
+    parser_import = subparsers.add_parser("get")
     parser_import.set_defaults(action="get")
     parser_import.add_argument("project_id", action="store")
     parser_import.add_argument("destination", action="store", nargs="?")
-    parser_import.add_argument("--format", action="store", nargs="?", const=DEFAULT_FORMAT)
+    parser_import.add_argument(
+        "--format", action="store", nargs="?", const=DEFAULT_FORMAT
+    )
 
     # update project:           update <projectid> <file | folder>
     parser_export = subparsers.add_parser("update")
@@ -1216,7 +1450,9 @@ def arg_parser():
     parser_export.add_argument("path", action="store", nargs="?")
 
     # list issue in library :           list_issue [keyword]
-    parser_list_issues = subparsers.add_parser("issue", aliases=("list_issues", "issues", "issue", "search"))
+    parser_list_issues = subparsers.add_parser(
+        "issue", aliases=("list_issues", "issues", "issue", "search")
+    )
     parser_list_issues.set_defaults(action="list_issues")
     parser_list_issues.add_argument("search_term", action="store", nargs="?")
 
@@ -1227,7 +1463,9 @@ def arg_parser():
     parser_add_issue.add_argument("--node", "-n", action="store", nargs="?")
     add_issue_option = parser_add_issue.add_mutually_exclusive_group(required=True)
     add_issue_option.add_argument("--id", "-i", action="store")
-    add_issue_option.add_argument("--title", "-t", action="store", const="New Issue", nargs="?")
+    add_issue_option.add_argument(
+        "--title", "-t", action="store", const="New Issue", nargs="?"
+    )
 
     # convert project files:      convert <file> --format :
     parser_convert = subparsers.add_parser("convert")
@@ -1245,12 +1483,12 @@ def arg_parser():
         sys.argv.append("--help")
 
     # Parse script argument
-    try:
-        args, unknown_args = parser.parse_known_args()
+    args = parser.parse_args()
+    if args.filter is not None and args.search_term is None:
+        log.error("--filter cannot be used without a search term")
+        raise SystemExit()
+    else:
         return args
-    # Invalid argument
-    except:
-        log.error(f"{sys.argv[-1:]} is not a valid action")
 
 
 def main():
@@ -1260,41 +1498,50 @@ def main():
         highlight=False,
     )
     args = arg_parser()
-
-    if args.action in ["list_projects", "get", "update", "list_issues", "add_issue"]:
-        if len(config["DRADIS"]["api_token"]) != 20:
-            log.error(f"Invalid or missing Dradis API token")
-            raise SystemExit()
-        else:
-            if not test_connection(INSTANCE_URL, API_TOKEN):  # TODO add check not 403
-                log.error(f"Instance url definied in config.ini is not reachable")
-                raise SystemExit()
-            else:
-                dradis = DradisMD(API_TOKEN, INSTANCE_URL, VERIFY_SSL)
-                log.debug("Loaded API key from config file")
-
     # Action handler
     if args.help:
         print_help()
-    elif args.action == "list_projects":
-        dradis.list_projects(args.last or 0)
-    elif args.action == "get":
-        dradis.import_project(args.project_id, args.destination or ".", args.format or DRADIS_FORMAT)
-    elif args.action == "update":
-        dradis.update_project(args.project_id, args.path or ".")
-    elif args.action == "list_issues":
-        dradis.list_issues_in_library(args.search_term or None)
-    elif args.action == "add_issue":
-        dradis.add_issue(
-            args.project_path or ".",
-            args.node or None,
-            args.title or None,
-            args.id or None,
-        )
+    elif args.action in [
+        "list_projects",
+        "get",
+        "update",
+        "list_issues",
+        "add_issue",
+    ]:
+        if len(config["DRADIS"]["api_token"]) != 20:
+            log.error(f"Invalid or missing Dradis API token")
+        else:
+            if test_connection(INSTANCE_URL, API_TOKEN):
+                dradis = DradisMD(API_TOKEN, INSTANCE_URL, VERIFY_SSL)
+                log.debug("Loaded API key from config file")
+
+                if args.action == "list_projects":
+                    dradis.list_projects(
+                        args.last or 0, args.filter or None, args.search_term or None
+                    )
+                elif args.action == "get":
+                    dradis.import_project(
+                        args.project_id,
+                        args.destination or ".",
+                        args.format or DRADIS_FORMAT,
+                    )
+                elif args.action == "update":
+                    dradis.update_project(args.project_id, args.path or ".")
+                elif args.action == "list_issues":
+                    dradis.list_issues_in_library(args.search_term or None)
+                elif args.action == "add_issue":
+                    dradis.add_issue(
+                        args.project_path or ".",
+                        args.node or None,
+                        args.title or None,
+                        args.id or None,
+                    )
     elif args.action == "convert":
         convert_files(args.path, args.format or DRADIS_FORMAT)
     elif args.action == "rename":
-        rename_attachments_from_file(args.file, config["SETTINGS"].get("renaming_format"))
+        rename_attachments_from_file(
+            args.file, config["SETTINGS"].get("renaming_format")
+        )
     else:
         log.error("Action not implemented yet")
 
