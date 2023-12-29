@@ -36,12 +36,11 @@ from rich.logging import RichHandler
 
 from difflib import SequenceMatcher  # For searching
 
-
+# Pretty traceback
 from rich.traceback import install
 
 install()
 
-# TODO add detection content bloc with no parent folder
 
 #####################################################
 #                                                   #
@@ -189,6 +188,7 @@ class DradisMD:
         param last: Show only Top n project (optional)
         """
         log.debug(f"Listing Dradis Projects")
+
         self.projects = self.api.get_all_projects()
 
         # Sort projects by last updated
@@ -211,29 +211,24 @@ class DradisMD:
             if column.strip() != "":
                 project_list_table.add_column(column)
 
-        # Apply filter with search term (Team / Project name / Author)
+        # Apply filter with search term (team / project name / Author)
         if search_criteria:
-            match_list = []
-            search = Search(search_term)
+            log.debug(f"Filter: {search_criteria}:{search_term}")
+            projects_found = []
             for project in sorted_projects:
                 # Find a matching word for one of the following criteria
-                if search_criteria == "team":
-                    if "team" in project:
-                        for word in project["team"]["name"].split():
-                            search.search_in_string(word)
-                elif search_criteria == "project":
-                    for word in project[
-                        "na                                                                                                                                                                                      me"
-                    ].split():
-                        search.search_in_string(word)
-                elif search_criteria == "authors":
-                    for word in project["authors"]["email"].split():
-                        search.search_in_string(word)
+                if search_criteria == "team" and "team" in project:
+                    if search_term in project["team"]["name"]:
+                        projects_found.append(project)
+                elif search_criteria == "project" and search_term in project["name"]:
+                    projects_found.append(project)
+                elif (
+                    search_criteria == "owner"
+                    and search_term in project["owners"][0]["email"]
+                ):
+                    projects_found.append(project)
 
-                if search.match:
-                    match_list.append(project)
-
-            sorted_projects = match_list
+            sorted_projects = projects_found
 
         # Get only top X project
         if last > 0 and last < len(sorted_projects):
@@ -1189,29 +1184,6 @@ def clean_filename(filename: str) -> str:
     return filename
 
 
-class Search:
-    def __init__(self, search_term: str):
-        # self.keywords_found = []
-        self.search_term = search_term
-        self.match_score = 0
-        self.match = False
-
-    def search_in_string(self, search_target):
-        self.match = False
-        for keyword in self.search_term.split():
-            match_ratio = SequenceMatcher(
-                None, keyword.lower(), search_target.lower()
-            ).ratio()
-            if keyword in search_target:
-                self.match = True
-            elif match_ratio > 0.80:
-                self.match = True
-                self.match_score += match_ratio
-                # self.keywords_found.append(search_target)
-        log.debug(self.search_term)
-        return self
-
-
 def get_item_from_dict_list(
     dict_list: list, key_to_check: str, matching_string: str
 ) -> dict:
@@ -1429,7 +1401,7 @@ def arg_parser():
         "-f",
         action="store",
         type=str,
-        choices=["team", "project", "author"],
+        choices=["team", "project", "owner"],
         const=None,
     )
     search_group.add_argument("search_term", action="store", type=str, nargs="?")
