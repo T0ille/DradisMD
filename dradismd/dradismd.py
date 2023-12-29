@@ -1,12 +1,12 @@
-#!/usr/bin/env python
 """
 DradisMD 
-This tool provides a CLI for effortlessly exporting and importing Dradis projects to local files. Among its standout features are:
+This tool provides a CLI for exporting and importing Dradis projects to local files. Among its standout features are:
     List and filter projects
     Convert textile to markdown
     Effortlessly upload attachments
 
 """
+
 import sys
 import re
 import html
@@ -16,8 +16,10 @@ import logging
 import pypandoc
 import timeago
 import requests
+import pkg_resources
 from pathlib import Path
 from datetime import datetime
+
 
 # Dradis API wrapper from https://github.com/NorthwaveSecurity/dradis-api
 from dradis import Dradis
@@ -41,26 +43,20 @@ from rich.traceback import install
 
 install()
 
-
 #####################################################
 #                                                   #
 #           DEFINITION OF CONST                     #
 #                                                   #
 #####################################################
-
-DRADISMD_VERSION = "0.3.2"
-
-SCRIPT_PATH = Path(__file__).parent  # location of dradismd.py
-CONFIG_FILE = Path(f"{SCRIPT_PATH}/config.ini")  # location of config file
+DRADISMD_VERSION = pkg_resources.require("dradismd")[0].version
 DATE_FORMAT = "%d/%m/%Y %H:%M"  # 17/10/2021 16:31
 LINE_RETURN = "\n"  # force UNIX line return when writing files
 
-ISSUE_TEMPLATE = Path(
-    f"{SCRIPT_PATH}/issue_template.textile"
-)  # location of issue template
-EVIDENCE_TEMPLATE = Path(
-    f"{SCRIPT_PATH}/evidence_template.textile"
-)  # location of evidence template
+CONFIG_FOLDER = Path(f"{Path.home()}/.config/dradismd")
+CONFIG_PATH = Path(f'{CONFIG_FOLDER}/config.ini')
+ISSUE_TEMPLATE = Path(f'{CONFIG_FOLDER}/issue_template.textile')
+EVIDENCE_TEMPLATE = Path(f'{CONFIG_FOLDER}/evidence_template.textile')
+
 
 DRADIS_FORMAT = "textile"
 SUPPORTED_INPUT = [".textile", ".md"]  # input formats for pandoc
@@ -83,7 +79,6 @@ OUTPUT_STYLE = {
     "highlight": "bright_cyan",
     "args": "bright_yellow",
 }
-
 console = Console(theme=Theme(OUTPUT_STYLE))
 
 FORMAT = "%(message)s"
@@ -91,6 +86,7 @@ logging.basicConfig(
     level="CRITICAL", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
 )
 log = logging.getLogger("rich")
+log.setLevel(logging.DEBUG)
 logging.getLogger("requests").setLevel(logging.CRITICAL)
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 
@@ -108,15 +104,13 @@ NOW = datetime.now()
 #                                                   #
 #####################################################
 
-
 try:
     config = configparser.ConfigParser()
-
-    if not CONFIG_FILE.is_file():
-        log.error(f"The config file [{CONFIG_FILE}] is missing.")
+    if not CONFIG_PATH.is_file():
+        log.error(f"The config file [{CONFIG_PATH}] is missing.")
         raise SystemExit
     else:
-        config.read(CONFIG_FILE)
+        config.read(CONFIG_PATH)
         API_TOKEN = config["DRADIS"]["api_token"]
         INSTANCE_URL = config["DRADIS"]["instance_url"]
         LOG_LEVEL = int(config["SETTINGS"]["log_level"])
@@ -164,7 +158,8 @@ try:
 
 except KeyError as e:
     log.error(f"Key not found: {e}")
-
+except Exception as e:
+    log.error(f"Error reading configuration file:\n {e}")
 
 #####################################################
 #                                                   #
@@ -188,7 +183,7 @@ class DradisMD:
         param last: Show only Top n project (optional)
         """
         log.debug(f"Listing Dradis Projects")
-
+        
         self.projects = self.api.get_all_projects()
 
         # Sort projects by last updated
@@ -215,16 +210,17 @@ class DradisMD:
         if search_criteria:
             log.debug(f"Filter: {search_criteria}:{search_term}")
             projects_found = []
+            search_term=search_term.lower()
             for project in sorted_projects:
                 # Find a matching word for one of the following criteria
                 if search_criteria == "team" and "team" in project:
-                    if search_term in project["team"]["name"]:
+                    if search_term in project["team"]["name"].lower():
                         projects_found.append(project)
-                elif search_criteria == "project" and search_term in project["name"]:
+                elif search_criteria == "name" and search_term in project["name"].lower():
                     projects_found.append(project)
                 elif (
                     search_criteria == "owner"
-                    and search_term in project["owners"][0]["email"]
+                    and search_term in project["owners"][0]["email"].lower()
                 ):
                     projects_found.append(project)
 
@@ -1048,7 +1044,7 @@ def convert(content: str, input_format: str, output_format: str) -> str:
             try:
                 pandoc_args = ["--wrap=preserve"]  # pandoc argument to pass
                 content = re.sub(
-                    FIELD_REGEX, f"\g<1>\r\n\r\n\g<2>", content
+                    FIELD_REGEX, f"\g<1>\n\n\g<2>", content
                 )  # Make sure there is always 2 {LINE_RETURN} between #[Field]# and their content
                 output = pypandoc.convert_text(
                     content, output_format, format=input_format, extra_args=pandoc_args
@@ -1339,9 +1335,9 @@ def print_help() -> None:
     help_table.add_column("Description")
     help_table.add_row("--help", "", "Show this help message")
     help_table.add_row(
-        "projects\n    [dim][--last][/dim]",
-        "\n[dim]<number>[/dim]",
-        "List projects with their IDs in last updated order\n[dim]Show only last X projects[/dim]",
+        "projects\n    [dim][--last][/dim]\n    [dim][--filter][/dim]",
+        "\n[dim]<number>[/dim]\n[dim]<name,team,owner> <search criteria>[/dim]",
+        "List projects with their IDs in last updated order\n[dim]Show only last X projects[/dim]\n[dim]Filter by project name, team or project owner (email)[/dim]",
     )
     help_table.add_row(
         "get\n   [dim][--format][/dim]",
@@ -1352,11 +1348,11 @@ def print_help() -> None:
     help_table.add_row(
         "issues\n[dim][keywords][/dim]",
         "[dim]<keywords>[/dim]",
-        "List issues from issue library. \n[dim]Search the issue library  for one of the keywords provided[/dim]",
+        "List issues from issue library. \n[dim]Search the issue library for the keywords provided[/dim]",
     )
     help_table.add_row(
         "add_issue \n   [dim][--node][/dim]",
-        "<project_path> --id <id> or --title <title>\n[dim]<node_name>[/dim]",
+        "<project_path> --id <id> [highlight]or[/highlight] --title <title>\n[dim]<node_name>[/dim]",
         "Add an issue to project folder from template or from issue library if --id is used. \n[dim]Create a new evidence too if --node [node_name] is provided[/dim]",
     )
     help_table.add_row(
@@ -1375,7 +1371,7 @@ def print_help() -> None:
 
     console.print(help_table)
     console.print(
-        "[highlight]Example of use:[/highlight]\npython dradismd.py [args]projects -l 10[/args]\npython dradismd.py [args]get 47 /workfolder/pentests [dim]--format markdown[/dim][/args]",
+        "[highlight]Example of use:[/highlight]\ndradismd [args]projects -l 10 -f team megacorp[/args]\ndradismd [args]get 47 /workfolder/pentests [dim]--format markdown[/dim][/args]\ndradismd [args]issues [dim]injections[/dim][/args]",
         style=None,
     )
 
@@ -1401,7 +1397,7 @@ def arg_parser():
         "-f",
         action="store",
         type=str,
-        choices=["team", "project", "owner"],
+        choices=["team", "name", "owner"],
         const=None,
     )
     search_group.add_argument("search_term", action="store", type=str, nargs="?")
@@ -1456,12 +1452,8 @@ def arg_parser():
 
     # Parse script argument
     args = parser.parse_args()
-    if args.filter is not None and args.search_term is None:
-        log.error("--filter cannot be used without a search term")
-        raise SystemExit()
-    else:
-        return args
-
+    
+    return args
 
 def main():
     console.print(
@@ -1488,9 +1480,13 @@ def main():
                 log.debug("Loaded API key from config file")
 
                 if args.action == "list_projects":
-                    dradis.list_projects(
-                        args.last or 0, args.filter or None, args.search_term or None
-                    )
+                    if args.filter is not None and args.search_term is None:
+                        log.error("--filter cannot be used without a search term")
+                        raise SystemExit()
+                    else:
+                        dradis.list_projects(
+                            args.last or 0, args.filter or None, args.search_term or None
+                        )
                 elif args.action == "get":
                     dradis.import_project(
                         args.project_id,
@@ -1517,6 +1513,3 @@ def main():
     else:
         log.error("Action not implemented yet")
 
-
-if __name__ == "__main__":
-    main()
