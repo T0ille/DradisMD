@@ -59,7 +59,7 @@ api_token=your_api_token_here
 
 3. List projects
 ```
-python dradismd.py projects
+dradismd projects
 ```
 
 ## Usage
@@ -78,7 +78,7 @@ DradisMD supports the following action:
 ### --help
 Show help message
 ```
-python dradismd.py --help 
+dradismd --help 
 ```
 
 ### projects:  
@@ -86,13 +86,13 @@ List projects with their IDs in last updated order.  Optional filters can be use
 --last option to show only last X projects
 --filter option with ['team','owner','name'] <value> to filter projects listed by team, owner (email address used for Dradis) or by project name
 ```
-python dradismd.py projects [-l <number>] [-f <search_criteria> <search_term>]
+dradismd projects [-l <number>] [-f <search_criteria> <search_term>]
 ```
 
 **Example**:  
 ```
-python dradismd.py projects
-python dradismd.py projects -l 10 -f team megacorp
+dradismd projects
+dradismd projects -l 10 -f team megacorp
 ```
 
 ### get
@@ -100,13 +100,13 @@ Retrieve a project from Dradis to local folder.
 Save to local folder if no destination folder is provided.
 --format options to convert another format than textile
 ```
-python dradismd.py get <project_id> [destination_folder] [--format <value>] 
+dradismd get <project_id> [destination_folder] [--format <value>] 
 ```
 
 **Example**:  
 Import project with ID 17 to local folder and convert to markdown
 ```
-python dradismd.py get 17 --format markdown
+dradismd get 17 --format markdown
 ```
 
 ### update
@@ -117,17 +117,17 @@ Export your local project file(s) to Dradis. Supports markdown and textile.
 If no source is provided, local folder is used.  
 A single file can also be used
 ```
-python dradismd.py update <project_id> [file|folder]           
+dradismd update <project_id> [file|folder]           
 ```
 
 **Examples**:  
 Export project folder and all files inside
 ```
-python dradismd.py update 167 "ProjectFolder"
+dradismd update 167 "ProjectFolder"
 ```
 Export a single  content block
 ```
-python dradismd.py update 167 "ProjectFolder/Content Blocks/ContentBlock1.md"           
+dradismd update 167 "ProjectFolder/Content Blocks/ContentBlock1.md"           
 ```
 Note: The script expects the following folder structure (which is generated when using retrieving project with [get](#get):
 ```
@@ -154,7 +154,7 @@ List issues from Dradis issue library.
 Search the issue library for one of the keywords provided
 
 ```
-python dradismd.py issues [keywords]
+dradismd issues [keywords]
 ```
 
 ### add_issue
@@ -163,7 +163,7 @@ Add an issue to project folder from issue template or from Dradis issue library 
 Create a new evidence too if --node  is provided
 
 ```
-python dradismd.py add_issue <project_path> --id <id> or --title <title>
+dradismd add_issue <project_path> --id <id> or --title <title>
 ```
 
 
@@ -171,13 +171,13 @@ python dradismd.py add_issue <project_path> --id <id> or --title <title>
 ### convert
 Convert a project file or all files in a folder to another format. Supported: markdown, textile
 ```
-python dradismd.py convert <file|folder> <format>
+dradismd convert <file|folder> <format>
 ```
 
 ### rename
 Using the pattern defined in config.ini: Rename all attachments referenced in a project file and update the references
 ```
-python dradismd.py rename <file>
+dradismd rename <file>
 ```
 
 
