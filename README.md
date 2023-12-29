@@ -4,11 +4,6 @@ Current version:    **0.4.0**
   
 DradisMD allows to import, manage [Dradis](https://dradisframework.com/) projects locally and convert Dradis textile format to [GitHub Flavored Markdown](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)  and more other format supported by pandoc.
 
-Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based on the following libraries/project
-
-* [dradis-api](https://github.com/NorthwaveSecurity/dradis-api) Python wrapper for the [Dradis API](https://dradisframework.com/support/guides/rest_api/)
-* [pypandoc](https://github.com/NicklasTegner/pypandoc) wrapper for pandoc: markup file converting 
-* [rich](https://github.com/Textualize/rich) for prettier output 🌈
 
 **Table of contents**
 - [DradisMD](#dradismd)
@@ -25,6 +20,7 @@ Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based 
     - [convert](#convert)
     - [rename](#rename)
   - [Markdown editor suggestion](#markdown-editor-suggestion)
+  - [Inspiration for this project](#inspiration-for-this-project)
   - [Missing features and known bugs](#missing-features-and-known-bugs)
     - [Nested nodes not supported](#nested-nodes-not-supported)
     - [Attachments not imported from Dradis](#attachments-not-imported-from-dradis)
@@ -192,6 +188,13 @@ dradismd rename <file>
 3. [ObsidianMD](https://obsidian.md/)  
 
 Or literally any text editor such as VIM, Atom, Notepad++
+
+## Inspiration for this project
+Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based on the following libraries/project
+
+* [dradis-api](https://github.com/NorthwaveSecurity/dradis-api) Python wrapper for the [Dradis API](https://dradisframework.com/support/guides/rest_api/)
+* [pypandoc](https://github.com/NicklasTegner/pypandoc) wrapper for pandoc: markup file converting 
+* [rich](https://github.com/Textualize/rich) for output styling
 
 ## Missing features and known bugs
 
