@@ -1,5 +1,4 @@
 git+https://github.com/NorthwaveSecurity/dradis-api
-requests
 rich
 pypandoc
 timeago
