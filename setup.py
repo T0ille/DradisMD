@@ -36,7 +36,6 @@ setup(
     author="Elliot Rasch",
     description=DESCRIPTION,
     url="https://github.com/T0ille/DradisMD",
-    long_description=LONG_DESCRIPTION,
     packages=find_packages(),
     package_data={"dradismd": ["*.ini", "*.textile"]},
     include_package_data=True,
