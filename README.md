@@ -12,7 +12,7 @@ Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based 
 
 **Table of contents**
 - [DradisMD](#dradismd)
-  - [Requirments](#requirments)
+  - [Requirements](#requirements)
   - [Installation](#installation)
   - [Getting Started](#getting-started)
   - [Usage](#usage)
@@ -21,36 +21,36 @@ Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based 
     - [get](#get)
     - [update](#update)
     - [issues](#issues)
-    - [add_issue](#add_issue)
+    - [add\_issue](#add_issue)
     - [convert](#convert)
     - [rename](#rename)
-  - [Changelog](#changelog)
   - [Markdown editor suggestion](#markdown-editor-suggestion)
   - [Missing features and known bugs](#missing-features-and-known-bugs)
     - [Nested nodes not supported](#nested-nodes-not-supported)
     - [Attachments not imported from Dradis](#attachments-not-imported-from-dradis)
-    - [TODO:](#todo)
 
 ## Requirements
 
 * **Python >= 3.10**  
 
-To use the convertion features, [Pandoc](https://pandoc.org/) needs to be available in the $PATH.  
+To use the convention features, [Pandoc](https://pandoc.org/) needs to be available in the $PATH.  
 **Note**: DradisMD will detect if Pandoc is not installed and prompt to install it for you with pypandoc
 
 
 ## Installation
 
 ```
-pip -r requirements.txt
+git clone https://github.com/T0ille/DradisMD
+cd DradisMD
+pip install .
 ```
 
-[Optional] Zsh completion can also be setup see the [shell completion folder](./shell-completion). 
+[Optional] ZSH completion can also be setup see the [shell completion folder](./shell-completion). 
 
 ## Getting Started
 
 1. Find your **[API token](https://dradisframework.com/support/guides/rest_api/index.html#authentication)**
-2. Set the instance URL and API token in config.ini
+2. Set the instance URL and API token in config.ini (default location is ~/.config/dradismd/config.ini)
 
 ```
 instance_url=hxxps://your-dradis-instance-url.com
@@ -59,12 +59,12 @@ api_token=your_api_token_here
 
 3. List projects
 ```
-python dradismd.py list
+python dradismd.py projects
 ```
 
 ## Usage
 
-DradisMD supports the followings action:
+DradisMD supports the following action:
   * [--help](#help)                                           
   * [projects](#projects) 
   * [get](#get)
@@ -82,11 +82,19 @@ python dradismd.py --help
 ```
 
 ### projects:  
-List projects with their IDs in last updated order.  
---head option to show only last X projects
+List projects with their IDs in last updated order.  Optional filters can be used.
+--last option to show only last X projects
+--filter option with ['team','owner','name'] <value> to filter projects listed by team, owner (email address used for Dradis) or by project name
 ```
-python dradismd.py list [--head <number>]
+python dradismd.py projects [-l <number>] [-f <search_criteria> <search_term>]
 ```
+
+**Example**:  
+```
+python dradismd.py projects
+python dradismd.py projects -l 10 -f team megacorp
+```
+
 ### get
 Retrieve a project from Dradis to local folder.  
 Save to local folder if no destination folder is provided.
@@ -102,7 +110,7 @@ python dradismd.py get 17 --format markdown
 ```
 
 ### update
-⚠ **Disclaimer**: This action erases existing data on Dradis and replace it.   
+⚠ **Disclaimer**: This action erases existing data on Dradis and replaces it.   
 If you are unsure what you are doing, make sure you have a backup of your Dradis project.
 
 Export your local project file(s) to Dradis. Supports markdown and textile.  
@@ -142,8 +150,8 @@ The tool will not work properly if your local project has a different folder str
 
 ### issues
 
-List issues from issue library.  
-Search the issue library  for one of the keywords provided
+List issues from Dradis issue library.  
+Search the issue library for one of the keywords provided
 
 ```
 python dradismd.py issues [keywords]
@@ -151,7 +159,7 @@ python dradismd.py issues [keywords]
 
 ### add_issue
 
-Add an issue to project folder from template or from issue library if --id is used
+Add an issue to project folder from issue template or from Dradis issue library if --id is used
 Create a new evidence too if --node  is provided
 
 ```
@@ -172,15 +180,8 @@ Using the pattern defined in config.ini: Rename all attachments referenced in a 
 python dradismd.py rename <file>
 ```
 
-## Changelog
-
-**07/10/2022 - v0.2.0**
-- Added add_issue and issues action
-- Fixed rename
 
 ## Markdown editor suggestion
-
-Below some of the markdown editor I would recommend trying
 
 1. 🌟 Visual Code with the following extensions.  
    * [Markdown All in One](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one)  
@@ -190,7 +191,7 @@ Below some of the markdown editor I would recommend trying
 2. [Joplin](https://joplinapp.org/)  
 3. [ObsidianMD](https://obsidian.md/)  
 
-Or literally any text editor such as VIM, Atom, Notepad++, ...
+Or literally any text editor such as VIM, Atom, Notepad++
 
 ## Missing features and known bugs
 
@@ -203,10 +204,3 @@ At the moment nested nodes are not supported (because I never used them).
 
 The Dradis API doesn't allow to download attachments. 
 
-## TODO:
-
-- [X] Include interaction with [Issue Library](https://dradisframework.com/support/guides/rest_api/issuelibrary.html) to add new issue to project.
-- [X] Fix bugs with the auto renaming feature
-- [ ] Include more pandoc formats support (PDF, word, ...)
-- [ ] VScode workspace with relevant markdown/textile extensions
-- [ ] Add a check to verify the local file has a more recent 'last modified date' when updating project 
