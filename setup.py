@@ -5,8 +5,6 @@ import shutil
 
 VERSION = "0.4.0"
 DESCRIPTION = "DradisMD is CLI utility for exporting and importing Dradis projects to local files."
-with open("README.md") as f:
-    LONG_DESCRIPTION = f.read()
 
 class PostInstallCommand(install):
     def run(self):
