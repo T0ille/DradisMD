@@ -3,8 +3,8 @@ from setuptools.command.install import install
 import os
 import shutil
 
-VERSION = "0.4.0"
-DESCRIPTION = "DradisMD is CLI utility for exporting and importing Dradis projects to local files."
+VERSION = '0.4.0'
+DESCRIPTION = 'DradisMD is CLI utility for exporting and importing Dradis projects to local files.'
 
 class PostInstallCommand(install):
     def run(self):
