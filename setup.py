@@ -42,7 +42,9 @@ setup(
     install_requires=['dradis-api@git+https://github.com/NorthwaveSecurity/dradis-api@master',
                       'rich',
                       'pypandoc',
-                      'timeago'],
+                      'timeago',
+                      'requests',
+                      'setuptools'],
     keywords=["dradis api", "markdown"],
     classifiers=[
         "Development Status :: 4 - Beta",
