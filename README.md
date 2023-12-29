@@ -33,7 +33,7 @@ Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based 
 
 * **Python >= 3.10**  
 
-To use the convention features, [Pandoc](https://pandoc.org/) needs to be available in the $PATH.  
+To be able to convert files, [Pandoc](https://pandoc.org/) needs to be available in the $PATH.  
 **Note**: DradisMD will detect if Pandoc is not installed and prompt to install it for you with pypandoc
 
 
