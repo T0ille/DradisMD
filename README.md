@@ -2,7 +2,7 @@
 
 Current version:    **0.4.0**
   
-DradisMD allows to import, manage [Dradis](https://dradisframework.com/) projects locally and convert Dradis textile format to [GitHub Flavored Markdown](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)  and more other format supported by pandoc.
+DradisMD allows to import, manage [Dradis](https://dradisframework.com/) projects locally and convert Dradis textile format to [GitHub Flavored Markdown](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
 
 
 **Table of contents**
@@ -61,7 +61,7 @@ dradismd projects
 ## Usage
 
 DradisMD supports the following action:
-  * [--help](#help)                                           
+  * [--help](#--help)                                           
   * [projects](#projects) 
   * [get](#get)
   * [update](#update)      
