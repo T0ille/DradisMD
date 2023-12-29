@@ -1247,8 +1247,7 @@ def test_connection(url, api_token) -> bool:
     )
     req_headers = {
         "User-Agent": ua,
-        "Authorization": f"Token token={api_token}",
-        "Cookie": "***REMOVED***",
+        "Authorization": f"Token token={api_token}"
     }
     url = f"{url}/pro/api/"
     try:
