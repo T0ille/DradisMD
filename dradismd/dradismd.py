@@ -50,7 +50,7 @@ install()
 #####################################################
 DRADISMD_VERSION = pkg_resources.require("dradismd")[0].version
 DATE_FORMAT = "%d/%m/%Y %H:%M"  # 17/10/2021 16:31
-LINE_RETURN = "\n"  # force UNIX line return when writing files
+LINEBREAK = "\n"  # force UNIX line return when writing files
 
 CONFIG_FOLDER = Path(f"{Path.home()}/.config/dradismd")
 CONFIG_PATH = Path(f'{CONFIG_FOLDER}/config.ini')
@@ -110,6 +110,7 @@ try:
         log.error(f"The config file [{CONFIG_PATH}] is missing.")
         raise SystemExit
     else:
+        log.debug(f"Loading {CONFIG_PATH} config file")
         config.read(CONFIG_PATH)
         API_TOKEN = config["DRADIS"]["api_token"]
         INSTANCE_URL = config["DRADIS"]["instance_url"]
@@ -299,7 +300,7 @@ class DradisMD:
             filename = f"{clean_filename(block['fields']['Title'])}.textile"
             file = Path(f"{path}/{filename}")
             file.write_text(
-                block["content"], encoding="utf8", errors="ignore", newline=LINE_RETURN
+                block["content"], encoding="utf8", errors="ignore", newline=LINEBREAK
             )
             if format != DRADIS_FORMAT:
                 convert_file(file, DRADIS_FORMAT, format, True)
@@ -316,7 +317,7 @@ class DradisMD:
             for key, value in document_property.items():
                 file_content = f"{file_content}{key}={value}\n"
         properties_file.write_text(
-            file_content, encoding="utf8", errors="ignore", newline=LINE_RETURN
+            file_content, encoding="utf8", errors="ignore", newline=LINEBREAK
         )
         log.info(f"document_properties.ini was created")
 
@@ -340,7 +341,7 @@ class DradisMD:
 
             issue_file = Path(f"{path}/{filename}")
             issue_file.write_text(
-                issue_content, encoding="utf8", errors="ignore", newline=LINE_RETURN
+                issue_content, encoding="utf8", errors="ignore", newline=LINEBREAK
             )
 
             if format != DRADIS_FORMAT:
@@ -374,7 +375,7 @@ class DradisMD:
                     evidence_content,
                     encoding="utf8",
                     errors="ignore",
-                    newline=LINE_RETURN,
+                    newline=LINEBREAK,
                 )
                 if format != DRADIS_FORMAT:
                     convert_file(evidence_file, DRADIS_FORMAT, format, True)
@@ -693,7 +694,7 @@ class DradisMD:
         evidence.write_text(
             f"{evidence_content}\n#[EvidenceID]#\n\n{evidence_id}\n",
             encoding="utf8",
-            newline=LINE_RETURN,
+            newline=LINEBREAK,
             errors="ignore",
         )
 
@@ -900,7 +901,7 @@ class DradisMD:
                 f"Creating local issue: {issue_folder_path}/{issue_title}{extension}"
             )
             Path(f"{issue_folder_path}/{issue_title}{extension}").write_text(
-                issue_content, encoding="utf8", newline=LINE_RETURN, errors="ignore"
+                issue_content, encoding="utf8", newline=LINEBREAK, errors="ignore"
             )
             # Create evidence
             if node_name:
@@ -929,7 +930,7 @@ class DradisMD:
                 evidence_file.write_text(
                     evidence_content,
                     encoding="utf8",
-                    newline=LINE_RETURN,
+                    newline=LINEBREAK,
                     errors="ignore",
                 )
 
@@ -1039,13 +1040,13 @@ def convert(content: str, input_format: str, output_format: str) -> str:
             input_format = "gfm"
             for plugin in disabled_pandoc_plugins:
                 input_format = f"{input_format}-{plugin}"  # disable plugins with '-'
-
+        
         if input_format != output_format:
             try:
                 pandoc_args = ["--wrap=preserve"]  # pandoc argument to pass
                 content = re.sub(
                     FIELD_REGEX, f"\g<1>\n\n\g<2>", content
-                )  # Make sure there is always 2 {LINE_RETURN} between #[Field]# and their content
+                )  # Make sure there is always 2 {LINEBREAK} between #[Field]# and their content
                 output = pypandoc.convert_text(
                     content, output_format, format=input_format, extra_args=pandoc_args
                 )
@@ -1074,7 +1075,7 @@ def convert_file(
     log.debug(f"File {file_path.name} --> {new_file.name} ")
     new_content = convert(content, input_format, output_format)
     new_file.write_text(
-        new_content, encoding="utf8", newline=LINE_RETURN, errors="ignore"
+        new_content, encoding="utf8", newline=LINEBREAK, errors="ignore"
     )
 
     if delete_input_file:  # delete file after converting
@@ -1082,20 +1083,21 @@ def convert_file(
 
 
 def multi_line_table_fix(text: str) -> str:
-    # log.debug(text)
-    """Dradis does not support textile multiline table (==<br>== in a cell) when exporting
+    """GFM and Dradis do not support linebreaks inside table row   
     Default behaviour for GFM export when facing textile multiline table is to convert to HTML table
-    This function finds HTML table and replace it with proper markdown table"""
+    This function finds HTML table and replace it table"""
     pattern = "(<table[\s\w\W]*?<\/table>)"
     tables = re.findall(pattern, text)
     if tables:
         log.debug("Converting HTML table to MD")
         for table in tables:
             table_text = pypandoc.convert_text(
-                table, "markdown+multiline_tables", format="html"
+                table, "gfm", format="html",filters=[f"{CONFIG_FOLDER}/table_linebreak_fix_gfm.lua"]
             )
             text = text.replace(table, table_text)
+            text = text.replace('{{linebreak}}','\\'+LINEBREAK)
         log.debug(text)
+    
     return text
     # / (<table[\s\w\W]*<\/table>)/"""
     # return text
@@ -1108,13 +1110,13 @@ def replace_unecessary_escape(text: str) -> str:
     # Eg.: \[  --> [
     text = text.replace("\<", "<")
     text = text.replace("\>", ">")
-    text = text.replace("\\\n\n", "\n")  # multine in table
     text = text.replace("\\\\", "\\")
     text = text.replace("\*", "*")
     text = text.replace("\_", "_")
     text = text.replace("\[", "[")
     text = text.replace("\]", "]")
     text = text.replace("\#", "#")
+    text = text.replace("\|\n|", "\n")
     text = text.replace("\|", "|")
     text = text.replace("\~", "~")
     text = text.replace("\.\.", "..")
@@ -1320,7 +1322,7 @@ def rename_attachments_from_file(file_path, renaming_format) -> str:
                     )
                     #![{caption}]({new_path})
                     full_attachments_path.rename(new_path)
-            work_file.write_text(content, encoding="utf8", newline=LINE_RETURN)
+            work_file.write_text(content, encoding="utf8", newline=LINEBREAK)
 
 
 # Custom help menu
@@ -1512,3 +1514,7 @@ def main():
     else:
         log.error("Action not implemented yet")
 
+
+if __name__ == "__main__":
+    main()
+    

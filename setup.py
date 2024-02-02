@@ -3,7 +3,7 @@ from setuptools.command.install import install
 import os
 import shutil
 
-VERSION = '0.4.0'
+VERSION = '0.4.1'
 DESCRIPTION = 'DradisMD is CLI utility for exporting and importing Dradis projects to local files.'
 
 class PostInstallCommand(install):
@@ -13,11 +13,9 @@ class PostInstallCommand(install):
        
         # Copy sample_config.ini to ~/.config/dradismd/ after installation
         config_dir = os.path.expanduser('~/.config/dradismd')
-        package_files = ['config.ini','evidence_template.textile','issue_template.textile']
+        package_files = ['config.ini','evidence_template.textile','issue_template.textile','table_linebreak_fix_gfm.lua']
         print(f'Copying packages files in {config_dir}')
-        print(self.install_lib)
         if not os.path.exists(self.install_lib):
-            print('self.install_lib not exist')
             os.makedirs(config_dir)
         for item in package_files:
             item_path = os.path.join(self.install_lib, 'dradismd', item)
