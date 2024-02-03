@@ -197,7 +197,8 @@ Inspired by [DradisFS](https://github.com/NorthwaveSecurity/DradisFS) and based 
 * [rich](https://github.com/Textualize/rich) for output styling
 
 ## Missing features and known bugs
-
+- Add project creation
+- Make an interactive/UI mode with [Textual](https://github.com/Textualize/textual)
 
 ### Nested nodes not supported
 
