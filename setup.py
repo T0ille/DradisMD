@@ -35,7 +35,7 @@ setup(
     description=DESCRIPTION,
     url="https://github.com/T0ille/DradisMD",
     packages=find_packages(),
-    package_data={"dradismd": ["*.ini", "*.textile"]},
+    package_data={"dradismd": ["*.ini", "*.textile","*.lua"]},
     include_package_data=True,
     install_requires=['dradis-api@git+https://github.com/NorthwaveSecurity/dradis-api@master',
                       'rich',
