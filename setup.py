@@ -28,7 +28,6 @@ class PostInstallCommand(install):
 
 # Setting up
 setup(
-    # the name must match the folder name 'verysimplemodule'
     name="dradismd",
     version=VERSION,
     author="Elliot Rasch",
